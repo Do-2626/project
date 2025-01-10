@@ -29,7 +29,7 @@ export function TodoItem({
     onUpdateDescription(todo._id, description);
     setIsEditing(false);
   };
-
+ 
   return (
     <div className="flex flex-col gap-2 p-4 bg-white rounded-lg shadow-sm border border-gray-200">
       <div className="flex items-center justify-between">
