@@ -42,14 +42,15 @@ export default function CastForm() {
 
   //  دالة البحث عن العميل من خلال المنطقة او الاسم
   const searchCast = (search: string) => {
-    const filteredCasts = casts.filter((cast) => {
-      return (
-        cast.area.toLowerCase().includes(search.toLowerCase()) ||
-        cast.name.toLowerCase().includes(search.toLowerCase())
-      );
-    });
+    const filteredCasts =
+      casts.filter((cast) => {
+        console.log(cast.area.toLowerCase().includes(search.toLowerCase()));
+        return (
+          cast.area.toLowerCase().includes(search.toLowerCase()) ||
+          cast.name.toLowerCase().includes(search.toLowerCase())
+        );
+      }) || [];
     setSearchedCasts(filteredCasts);
-    console.log(casts);
   };
 
   async function fetchTodos() {
@@ -78,7 +79,7 @@ export default function CastForm() {
               setSearchCastValue((e.target as HTMLInputElement).value)
             }
             onChange={(e) => searchCast(e.target.value)}
-            placeholder="ابحث عن العميل"
+            placeholder="ابحث عن الاسم او العنوان"
             className="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
           />
         </div>
@@ -86,33 +87,32 @@ export default function CastForm() {
           href="/cast/add"
           className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md"
         >
-          إضافة عميل جديد
+          {`إضافة عميل جديد`}
         </Link>
       </div>
 
       <div className="grid gap-4">
-        {(searchedCasts.length > 0 ? searchedCasts : casts).map(
-          (cast: CastData, index: number) => (
-            <Link
-              key={index}
-              href={`/cast/${cast._id}`}
-              className="group flex items-center justify-between p-4 rounded-lg border bg-card text-card-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-            >
-              <div className="flex flex-col gap-1">
-                <span className="font-medium">{cast.name}</span>
-                <span className="text-sm text-muted-foreground">
-                  {cast.phone ? `0${cast.phone}` : "رقم الهاتف غير متوفر"}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">
-                  {cast.area}
-                </span>
-                <ChevronLeft className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
-            </Link>
-          )
-        )}
+        {(searchedCasts.length > 0 || searchCastValue.length > 0
+          ? searchedCasts
+          : casts
+        ).map((cast: CastData, index: number) => (
+          <Link
+            key={index}
+            href={`/cast/${cast._id}`}
+            className="group flex items-center justify-between p-4 rounded-lg border bg-card text-card-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+          >
+            <div className="flex flex-col gap-1">
+              <span className="font-medium">{cast.name}</span>
+              <span className="text-sm text-muted-foreground">
+                {cast.phone ? `0${cast.phone}` : "رقم الهاتف غير متوفر"}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">{cast.area}</span>
+              <ChevronLeft className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+          </Link>
+        ))}
       </div>
     </div>
   );
