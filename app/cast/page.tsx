@@ -36,7 +36,7 @@ export default function CastForm() {
   useEffect(() => {
     fetchTodos();
   }, []);
-  
+
   async function fetchTodos() {
     try {
       const response = await fetch("/api/cast");
@@ -51,13 +51,11 @@ export default function CastForm() {
     }
   }
 
-  console.log("casts from cast/page.tsx: ", casts);
-
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold">قائمة العملاء</h1>
-        <Link 
+        <Link
           href="/cast/add"
           className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md"
         >
@@ -67,7 +65,7 @@ export default function CastForm() {
 
       <div className="grid gap-4">
         {casts.map((cast: CastData, index: number) => (
-          <Link 
+          <Link
             key={index}
             href={`/cast/${cast._id}`}
             className="group flex items-center justify-between p-4 rounded-lg border bg-card text-card-foreground hover:bg-accent hover:text-accent-foreground transition-colors"

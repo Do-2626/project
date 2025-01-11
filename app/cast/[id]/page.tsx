@@ -57,7 +57,6 @@ export default function CustomerDetails({ params }: profileProps) {
     } catch (error) {
       console.error("Failed to fetch todos:", error);
     }
-    console.log("casts from cast/page.tsx: ", cast);
   }
 
   async function handleSave() {
@@ -162,7 +161,10 @@ export default function CustomerDetails({ params }: profileProps) {
                     />
                   </div>
                   <div className="flex justify-end gap-4">
-                    <Button onClick={() => setIsEditing(false)} variant="outline">
+                    <Button
+                      onClick={() => setIsEditing(false)}
+                      variant="outline"
+                    >
                       إلغاء
                     </Button>
                     <Button onClick={handleSave}>حفظ</Button>
