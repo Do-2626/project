@@ -1,8 +1,10 @@
 "use client";
-import { useState } from "react";
+import router from "next/router";
+import { useState, useEffect, useCallback } from "react";
+import { debounce } from "lodash";
 
-interface CastData {
-  customerCode: string;
+interface FormData {
+  customerCode: number;
   monthDate: string;
   date: string;
   name: string;
@@ -16,22 +18,15 @@ interface CastData {
   product: string;
   area: string;
   notes: string;
-  collectedInstallmentNumber: number;
-  printStatus: string;
-  upcomingCollectionAmount: number;
-  nextInstallment: number;
-  piecePrice: number;
   status: string;
-  column2: number;
-  delayInMonths: number;
-  paidFromNextInstallment: string;
 }
 
-export default function CastForm() {
-  const [formData, setFormData] = useState<CastData>({
-    customerCode: "",
+export default function AddCastPage() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState<FormData>({
+    customerCode: 0,
     monthDate: "",
-    date: "",
+    date: new Date().toISOString().split("T")[0],
     name: "",
     phone: "",
     k: 0,
@@ -43,109 +38,183 @@ export default function CastForm() {
     product: "",
     area: "",
     notes: "",
-    collectedInstallmentNumber: 0,
-    printStatus: "",
-    upcomingCollectionAmount: 0,
-    nextInstallment: 0,
-    piecePrice: 0,
-    status: "",
-    column2: 0,
-    delayInMonths: 0,
-    paidFromNextInstallment: "",
+    status: "active",
   });
 
+  useEffect(() => {
+    getNextCustomerCode();
+  }, []);
+
+  // دالة لمعرفة كود العميل الاخير وتضيف عليه 1
+  const getNextCustomerCode = async () => {
+    try {
+      const response = await fetch("/api/cast/last-customer-code");
+      const data = await response.json();
+      const newCustomerCode = data.nextCode;
+      setFormData((prev) => ({ ...prev, customerCode: newCustomerCode }));
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    console.log(
+      "🚀 ~ file: page.tsx ~ line 100 ~ handleSubmit ~ formData",
+      formData
+    );
+
+    try {
+      const response = await fetch("/api/cast", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to submit");
+      }
+
+      const data = await response.json();
+      router.push("/cast"); // Redirect after success
+    } catch (error) {
+      console.error("Error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleChange = useCallback(
+    debounce((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const { name, value } = e.target;
+      setFormData((prev) => ({
+        ...prev,
+        [name]:
+          name === "k" ||
+          name === "t" ||
+          name === "advance" ||
+          name === "amount" ||
+          name === "installments"
+            ? Number(value)
+            : value,
+      }));
+    }, 300),
+    []
+  );
+
   return (
-    <form className="max-w-4xl mx-auto p-4">
-      <div className="grid grid-cols-2 gap-4">
-        {/* معلومات العميل الأساسية */}
-        <div className="col-span-2 rounded-lg border bg-card text-card-foreground shadow-sm">
-          <div className="p-6 space-y-4">
-            <h2 className="text-2xl font-semibold leading-none tracking-tight">معلومات العميل</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <input
-                type="text"
-                placeholder="كود العميل"
-                value={formData.customerCode}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    customerCode: e.target.value,
-                  })
-                }
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              />
-              <input
-                type="text"
-                placeholder="الاسم"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              />
-              <input
-                type="text"
-                placeholder="رقم الهاتف"
-                value={formData.phone}
-                onChange={(e) =>
-                  setFormData({ ...formData, phone: e.target.value })
-                }
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              />
-              <input
-                type="text"
-                placeholder="المنطقة"
-                value={formData.area}
-                onChange={(e) =>
-                  setFormData({ ...formData, area: e.target.value })
-                }
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              />
-            </div>
-          </div>
+    <div className="max-w-2xl mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-6">إضافة عميل جديد</h1>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          {/* <label className="block mb-2" >
+            رقم العميل:
+          </label> */}
+          <input
+            type="text"
+            name="customerCode"
+            value={formData.customerCode}
+            onChange={handleChange}
+            className="w-full p-2 border rounded text-right"
+            hidden
+          />
         </div>
 
-        {/* تفاصيل المنتج والمدفوعات */}
-        <div className="col-span-2 bg-gray-50 p-4 rounded">
-          <h2 className="text-xl mb-4">تفاصيل المنتج والمدفوعات</h2>
-          <div className="grid grid-cols-3 gap-4">
-            <input
-              type="text"
-              placeholder="المنتج"
-              value={formData.product}
-              onChange={(e) =>
-                setFormData({ ...formData, product: e.target.value })
-              }
-              className="p-2 border rounded"
-            />
-            <input
-              type="number"
-              placeholder="المبلغ"
-              value={formData.amount}
-              onChange={(e) =>
-                setFormData({ ...formData, amount: Number(e.target.value) })
-              }
-              className="p-2 border rounded"
-            />
-            <input
-              type="number"
-              placeholder="المقدم"
-              value={formData.advance}
-              onChange={(e) =>
-                setFormData({ ...formData, advance: Number(e.target.value) })
-              }
-              className="p-2 border rounded"
-            />
-          </div>
+        <div>
+          <label className="block mb-2">الاسم:</label>
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            className="w-full p-2 border rounded text-right"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block mb-2">رقم الهاتف:</label>
+          <input
+            type="tel"
+            name="phone"
+            value={formData.phone}
+            onChange={handleChange}
+            className="w-full p-2 border rounded text-right"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block mb-2">المنتج:</label>
+          <input
+            type="text"
+            name="product"
+            value={formData.product}
+            onChange={handleChange}
+            className="w-full p-2 border rounded text-right"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block mb-2">المبلغ:</label>
+          <input
+            type="number"
+            name="amount"
+            value={formData.amount}
+            onChange={handleChange}
+            className="w-full p-2 border rounded text-right"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block mb-2">عدد الأقساط:</label>
+          <input
+            type="number"
+            name="installments"
+            value={formData.installments}
+            onChange={handleChange}
+            className="w-full p-2 border rounded text-right"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block mb-2">المنطقة:</label>
+          <input
+            type="text"
+            name="area"
+            value={formData.area}
+            onChange={handleChange}
+            className="w-full p-2 border rounded text-right"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block mb-2">ملاحظات:</label>
+          <textarea
+            name="notes"
+            value={formData.notes}
+            onChange={handleChange}
+            className="w-full p-2 border rounded text-right"
+            rows={4}
+          />
         </div>
 
         <button
           type="submit"
-          className="col-span-2 bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+          disabled={isLoading}
+          className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/90 disabled:bg-gray-400"
         >
-          حفظ البيانات
+          {isLoading ? "جاري الإرسال..." : "إضافة عميل"}
         </button>
-      </div>
-    </form>
+      </form>
+    </div>
   );
 }
