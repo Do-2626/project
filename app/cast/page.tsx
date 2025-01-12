@@ -30,14 +30,26 @@ interface CastData {
   delayInMonths: number;
   paidFromNextInstallment: string;
 }
+interface Language {
+  searchPlaceholder: string;
+}
 
 export default function CastForm() {
   const [casts, setCasts] = useState<CastData[]>([]);
   const [searchedCasts, setSearchedCasts] = useState<CastData[]>([]);
   const [searchCastValue, setSearchCastValue] = useState<string>("");
+  const [language, setLanguage] = useState<Language>({
+    searchPlaceholder: "ابحث عن الاسم او العنوان",
+  });
 
   useEffect(() => {
     fetchTodos();
+    // تعديل language.searchPlaceholder لشاشات الهواتف الى "+"
+    window.innerWidth < 768
+      ? setLanguage({ searchPlaceholder: "+" })
+      : setLanguage({ searchPlaceholder: "إضافة عميل جديد" });
+
+    // console.log(language.searchPlaceholder);
   }, []);
 
   //  دالة البحث عن العميل من خلال المنطقة او الاسم
@@ -79,7 +91,7 @@ export default function CastForm() {
               setSearchCastValue((e.target as HTMLInputElement).value)
             }
             onChange={(e) => searchCast(e.target.value)}
-            placeholder="ابحث عن الاسم او العنوان"
+            placeholder={"ابحث عن الاسم او العنوان"}
             className="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
           />
         </div>
@@ -87,10 +99,11 @@ export default function CastForm() {
           href="/cast/add"
           className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md"
         >
-          {`إضافة عميل جديد`}
+          {language.searchPlaceholder}
         </Link>
       </div>
 
+      {/* عرض قائمة العملاء */}
       <div className="grid gap-4">
         {(searchedCasts.length > 0 || searchCastValue.length > 0
           ? searchedCasts
