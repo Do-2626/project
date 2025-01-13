@@ -2,7 +2,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ChevronLeft } from "lucide-react";
-import { set } from "mongoose";
 
 interface CastData {
   _id: string;
@@ -101,6 +100,29 @@ export default function CastForm() {
         >
           {language.searchPlaceholder}
         </Link>
+      </div>
+
+      {/* التصفية حسب العنوان من قائمة منسدلة */}
+      <div className="flex justify-end gap-4 mb-8">
+        <select
+          className="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
+          // onChange={(e) => {
+          //   const selectedArea = e.target.value;
+          //   if (selectedArea === "all") {
+          //     setSearchedCasts([]);
+          //   } else {
+          //     const filteredCasts = casts.filter((cast) =>
+          //       cast.area.toLowerCase().includes(selectedArea.toLowerCase())
+          //     );
+          //     setSearchedCasts(filteredCasts);
+          //   }
+          // }}
+        >
+          <option value="all">الكل</option>
+          <option value="المنصورة">المنصورة</option>
+          <option value="المناخ">المناخ</option>
+          <option value="المناخ الجديد">المناخ الجديد</option>
+        </select>
       </div>
 
       {/* عرض قائمة العملاء */}

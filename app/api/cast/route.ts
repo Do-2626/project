@@ -6,7 +6,8 @@ import { NextRequest, NextResponse } from "next/server";
 // GET /api/cast
 export async function GET() {
   await connectDB();
-  // ترتيب العملاء حسب الرقم الخاص بهم customerCode باستخدام طرق mongoose
+  // ترتيب تصاعدى
+  // const sortedCasts = await Cast.find().sort({ area: 1 });
   const sortedCasts = await Cast.find().sort({ customerCode: 1 });
   return NextResponse.json(sortedCasts);
 }

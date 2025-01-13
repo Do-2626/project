@@ -27,6 +27,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+
   // اتصال بقاعدة البيانات
   await connectDB();
   // استخراج المعرف من الطلب
@@ -35,6 +36,7 @@ export async function PATCH(
   const data = await request.json();
   // البحث عن العميل وتحديثه
   const cast = await Cast.findByIdAndUpdate(id, data, { new: true });
+  
   // إرجاع العميل المحدث
   return cast
     ? NextResponse.json(cast)
@@ -49,7 +51,7 @@ export async function DELETE(
 ) {
   // اتصال بقاعدة البيانات
   await connectDB();
-  // استخراج المعرف من الطلب 
+  // استخراج المعرف من الطلب
   const { id } = params;
   // البحث عن العميل وحذفه
   const cast = await Cast.findByIdAndDelete(id);

@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const castSchema = new mongoose.Schema({
-  customerCode: { type: String },
+  customerCode: { type: Number },
   monthDate: { type: String },
   date: { type: String },
   name: { type: String },
@@ -24,6 +24,8 @@ const castSchema = new mongoose.Schema({
   column2: { type: Number },
   delayInMonths: { type: Number },
   paidFromNextInstallment: { type: String, default: "" },
+  latitude: { type: Number },
+  longitude: { type: Number },
 });
 
 export const Cast = mongoose.models.Cast || mongoose.model("Cast", castSchema);
