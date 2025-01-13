@@ -1,20 +1,19 @@
 "use client";
 import router from "next/router";
-import { useState, useEffect, useCallback } from "react";
-import { debounce } from "lodash";
+import { useEffect, useState } from "react";
 
 interface FormData {
-  customerCode: number;
+  customerCode: string | number;
   monthDate: string;
   date: string;
   name: string;
   phone: string;
-  k: number;
-  t: number;
+  k: string | number;
+  t: string | number;
   otherProducts: string;
-  advance: number;
-  amount: number;
-  installments: number;
+  advance: string | number;
+  amount: string | number;
+  installments: string | number;
   product: string;
   area: string;
   notes: string;
@@ -24,22 +23,32 @@ interface FormData {
 export default function AddCastPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<FormData>({
-    customerCode: 0,
+    customerCode: "",
     monthDate: "",
     date: new Date().toISOString().split("T")[0],
     name: "",
     phone: "",
-    k: 0,
-    t: 0,
+    k: "",
+    t: "",
     otherProducts: "",
-    advance: 0,
-    amount: 0,
-    installments: 0,
+    advance: "",
+    amount: "",
+    installments: "",
     product: "",
     area: "",
     notes: "",
     status: "active",
   });
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
   useEffect(() => {
     getNextCustomerCode();
@@ -60,26 +69,38 @@ export default function AddCastPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    console.log(
-      "🚀 ~ file: page.tsx ~ line 100 ~ handleSubmit ~ formData",
-      formData
-    );
-
     try {
+      const submissionData = {
+        ...formData,
+        customerCode:
+          formData.customerCode === "" ? 0 : Number(formData.customerCode),
+        k: formData.k === "" ? 0 : Number(formData.k),
+        t: formData.t === "" ? 0 : Number(formData.t),
+        advance: formData.advance === "" ? 0 : Number(formData.advance),
+        amount: formData.amount === "" ? 0 : Number(formData.amount),
+        installments:
+          formData.installments === "" ? 0 : Number(formData.installments),
+      };
+
+      console.log(
+        "🚀 ~ file: page.tsx ~ line 67 ~ handleSubmit ~ submissionData",
+        submissionData
+      );
+
       const response = await fetch("/api/cast", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(submissionData),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to submit");
+        throw new Error("Failed to submit form");
       }
 
-      const data = await response.json();
-      router.push("/cast"); // Redirect after success
+      // Reset form or redirect
+      router.push("/cast");
     } catch (error) {
       console.error("Error:", error);
     } finally {
@@ -87,28 +108,9 @@ export default function AddCastPage() {
     }
   };
 
-  const handleChange = useCallback(
-    debounce((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      const { name, value } = e.target;
-      setFormData((prev) => ({
-        ...prev,
-        [name]:
-          name === "k" ||
-          name === "t" ||
-          name === "advance" ||
-          name === "amount" ||
-          name === "installments"
-            ? Number(value)
-            : value,
-      }));
-    }, 300),
-    []
-  );
-
   return (
-    <div className="max-w-2xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">إضافة عميل جديد</h1>
-
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">إضافة عميل جديد</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           {/* <label className="block mb-2" >
@@ -142,31 +144,98 @@ export default function AddCastPage() {
             type="tel"
             name="phone"
             value={formData.phone}
-            onChange={handleChange}
+            onChange={(e) => {
+              if (!/^\d*$/.test(e.target.value)) {
+                alert("الرجاء إدخال أرقام فقط");
+                return;
+              }
+              handleChange(e);
+            }}
             className="w-full p-2 border rounded text-right"
             required
           />
         </div>
 
         <div>
-          <label className="block mb-2">المنتج:</label>
+          <label className="block mb-2">العنوان:</label>
           <input
             type="text"
-            name="product"
-            value={formData.product}
+            name="area"
+            value={formData.area}
             onChange={handleChange}
             className="w-full p-2 border rounded text-right"
             required
           />
         </div>
 
+        {/* عدد الكراسى */}
         <div>
-          <label className="block mb-2">المبلغ:</label>
+          <label className="block mb-2">عدد الكراسى:</label>
+          <input
+            type="text"
+            name="k"
+            value={formData.k}
+            onChange={(e) => {
+              if (!/^\d*$/.test(e.target.value)) {
+                alert("الرجاء إدخال أرقام فقط");
+                return;
+              }
+              handleChange(e);
+            }}
+            className="w-full p-2 border rounded text-right"
+          />
+        </div>
+
+        {/* عدد الترابيزة */}
+        <div>
+          <label className="block mb-2">عدد الترابيازت:</label>
+          <input
+            type="text"
+            name="t"
+            value={formData.t}
+            onChange={(e) => {
+              if (!/^\d*$/.test(e.target.value)) {
+                alert("الرجاء إدخال أرقام فقط");
+                return;
+              }
+              handleChange(e);
+            }}
+            className="w-full p-2 border rounded text-right"
+          />
+        </div>
+
+        {/* مبلغ المقدم */}
+        <div>
+          <label className="block mb-2">المقدم:</label>
+          <input
+            type="number"
+            name="advance"
+            value={formData.advance}
+            onChange={(e) => {
+              if (!/^\d*$/.test(e.target.value)) {
+                alert("الرجاء إدخال أرقام فقط");
+                return;
+              }
+              handleChange(e);
+            }}
+            className="w-full p-2 border rounded text-right"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block mb-2">القسط الشهرى:</label>
           <input
             type="number"
             name="amount"
             value={formData.amount}
-            onChange={handleChange}
+            onChange={(e) => {
+              if (!/^\d*$/.test(e.target.value)) {
+                alert("الرجاء إدخال أرقام فقط");
+                return;
+              }
+              handleChange(e);
+            }}
             className="w-full p-2 border rounded text-right"
             required
           />
@@ -178,19 +247,13 @@ export default function AddCastPage() {
             type="number"
             name="installments"
             value={formData.installments}
-            onChange={handleChange}
-            className="w-full p-2 border rounded text-right"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block mb-2">المنطقة:</label>
-          <input
-            type="text"
-            name="area"
-            value={formData.area}
-            onChange={handleChange}
+            onChange={(e) => {
+              if (!/^\d*$/.test(e.target.value)) {
+                alert("الرجاء إدخال أرقام فقط");
+                return;
+              }
+              handleChange(e);
+            }}
             className="w-full p-2 border rounded text-right"
             required
           />

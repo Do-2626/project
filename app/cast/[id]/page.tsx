@@ -1,84 +1,89 @@
 "use client";
-import { useState, useEffect } from "react";
+
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
-interface profileProps {
-  params: {
-    id: string;
-  };
-}
-
-interface CastData {
-  _id: string;
-  customerCode: string;
-  monthDate: string;
-  date: string;
-  name: string;
-  phone: string;
-  k: number;
-  t: number;
-  otherProducts: string;
-  advance: number;
-  amount: number;
-  installments: number;
-  product: string;
-  area: string;
-  notes: string;
-  collectedInstallmentNumber: number;
-  printStatus: string;
-  upcomingCollectionAmount: number;
-  nextInstallment: number;
-  piecePrice: number;
-  status: string;
-  column2: number;
-  delayInMonths: number;
-  paidFromNextInstallment: string;
-}
-
-export default function CustomerDetails({ params }: profileProps) {
-  const [cast, setCast] = useState<CastData>();
+export default function CastDetails() {
+  const params = useParams();
+  interface CastData {
+    name: string;
+    phone: string;
+    address: string;
+  }
+  
+  const [cast, setCast] = useState<CastData | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [editedData, setEditedData] = useState<CastData | null>(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    phone: "",
+    address: "",
+  });
 
   useEffect(() => {
-    getCastDetails();
-  }, []);
-
-  async function getCastDetails() {
-    try {
-      const response = await fetch(`/api/cast/${params.id}`);
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error("Failed to fetch todos");
+    const fetchCast = async () => {
+      try {
+        const response = await fetch(`/api/cast/${params.id}`);
+        const data = await response.json();
+        setCast(data);
+        setFormData(data);
+      } catch (error) {
+        console.error("Error fetching cast:", error);
       }
-      setCast(data);
-      setEditedData(data);
-    } catch (error) {
-      console.error("Failed to fetch todos:", error);
-    }
-  }
+    };
+    fetchCast();
+  }, [params.id]);
 
-  async function handleSave() {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSave = async () => {
     try {
-      const res = await fetch(`/api/cast/${params.id}`, {
-        method: "PATCH",
+      const response = await fetch(`/api/cast/${params.id}`, {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(editedData),
+        body: JSON.stringify(formData),
       });
 
-      if (res.ok) {
-        if (editedData) {
-          setCast(editedData);
-          setIsEditing(false);
-        }
+      if (!response.ok) {
+        throw new Error("Failed to update");
       }
+
+      setCast(formData);
+      setIsEditing(false);
     } catch (error) {
-      console.error("Error updating customer:", error);
+      console.error("Error updating cast:", error);
     }
-  }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm("هل أنت متأكد من حذف هذا العميل؟")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/cast/${params.id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete");
+      }
+
+      window.location.href = "/cast";
+    } catch (error) {
+      console.error("Error deleting cast:", error);
+    }
+  };
 
   if (!cast) return <div>Loading...</div>;
 
@@ -89,119 +94,58 @@ export default function CustomerDetails({ params }: profileProps) {
         <p className="text-muted-foreground">عرض وتعديل بيانات العميل</p>
       </div>
 
-      <div className="w-full max-w-2xl">
-        <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
-          <div className="p-6 space-y-4">
-            {isEditing ? (
-              <>
-                <div className="grid gap-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <Input
-                      value={editedData?.name || ""}
-                      onChange={(e) =>
-                        editedData &&
-                        setEditedData({
-                          ...editedData,
-                          name: e.target.value,
-                        } as CastData)
-                      }
-                      placeholder="Name"
-                    />
-                    <Input
-                      value={editedData?.phone || ""}
-                      onChange={(e) =>
-                        setEditedData({
-                          ...editedData,
-                          phone: e.target.value,
-                        } as CastData)
-                      }
-                      placeholder="Phone"
-                    />
-                    <Input
-                      value={editedData?.area || ""}
-                      onChange={(e) =>
-                        setEditedData({
-                          ...editedData,
-                          area: e.target.value,
-                        } as CastData)
-                      }
-                      placeholder="Area"
-                    />
-                    <Input
-                      value={editedData?.product || ""}
-                      onChange={(e) =>
-                        setEditedData({
-                          ...editedData,
-                          product: e.target.value,
-                        } as CastData)
-                      }
-                      placeholder="Product"
-                    />
-                    <Input
-                      type="number"
-                      value={editedData?.amount || ""}
-                      onChange={(e) =>
-                        setEditedData({
-                          ...editedData,
-                          amount: Number(e.target.value),
-                        } as CastData)
-                      }
-                      placeholder="Amount"
-                    />
-                    <Input
-                      type="number"
-                      value={editedData?.installments || ""}
-                      onChange={(e) =>
-                        setEditedData({
-                          ...editedData,
-                          installments: Number(e.target.value),
-                        } as CastData)
-                      }
-                      placeholder="Installments"
-                    />
-                  </div>
-                  <div className="flex justify-end gap-4">
-                    <Button
-                      onClick={() => setIsEditing(false)}
-                      variant="outline"
-                    >
-                      إلغاء
-                    </Button>
-                    <Button onClick={handleSave}>حفظ</Button>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="grid gap-2">
-                  <p>
-                    <strong>الاسم:</strong> {cast.name}
-                  </p>
-                  <p>
-                    <strong>رقم الهاتف:</strong> {cast.phone}
-                  </p>
-                  <p>
-                    <strong>المنطقة:</strong> {cast.area}
-                  </p>
-                  <p>
-                    <strong>المنتج:</strong> {cast.product}
-                  </p>
-                  <p>
-                    <strong>المبلغ:</strong> {cast.amount}
-                  </p>
-                  <p>
-                    <strong>الأقساط:</strong> {cast.installments}
-                  </p>
-                  <p>
-                    <strong>الملاحظات:</strong> {cast.notes}
-                  </p>
-                </div>
-                <Button onClick={() => setIsEditing(true)} className="mt-4">
-                  تعديل البيانات
-                </Button>
-              </>
-            )}
-          </div>
+      <div className="w-full max-w-md space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="name">الاسم</Label>
+          <Input
+            id="name"
+            name="name"
+            value={formData.name}
+            onChange={handleInputChange}
+            disabled={!isEditing}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="phone">رقم الهاتف</Label>
+          <Input
+            id="phone"
+            name="phone"
+            value={formData.phone}
+            onChange={handleInputChange}
+            disabled={!isEditing}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="address">العنوان</Label>
+          <Input
+            id="address"
+            name="address"
+            value={formData.address}
+            onChange={handleInputChange}
+            disabled={!isEditing}
+          />
+        </div>
+
+        <div className="flex justify-end gap-2">
+          {isEditing ? (
+            <>
+              <Button onClick={() => setIsEditing(false)} variant="outline">
+                إلغاء
+              </Button>
+              <Button onClick={handleSave}>حفظ</Button>
+            </>
+          ) : (
+            <>
+              <Button onClick={() => setIsEditing(true)} variant="outline">
+                تعديل
+              </Button>
+              <Button onClick={handleDelete} variant="destructive">
+                حذف
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </div>

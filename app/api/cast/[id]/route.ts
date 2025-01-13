@@ -49,7 +49,7 @@ export async function DELETE(
 ) {
   // اتصال بقاعدة البيانات
   await connectDB();
-  // استخراج المعرف من الطلب
+  // استخراج المعرف من الطلب 
   const { id } = params;
   // البحث عن العميل وحذفه
   const cast = await Cast.findByIdAndDelete(id);
