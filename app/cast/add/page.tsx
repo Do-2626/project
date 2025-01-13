@@ -80,12 +80,7 @@ export default function AddCastPage() {
         amount: formData.amount === "" ? 0 : Number(formData.amount),
         installments:
           formData.installments === "" ? 0 : Number(formData.installments),
-      };
-
-      console.log(
-        "🚀 ~ file: page.tsx ~ line 67 ~ handleSubmit ~ submissionData",
-        submissionData
-      );
+      }; 
 
       const response = await fetch("/api/cast", {
         method: "POST",

@@ -55,7 +55,7 @@ export default function CastForm() {
   const searchCast = (search: string) => {
     const filteredCasts =
       casts.filter((cast) => {
-        console.log(cast.area.toLowerCase().includes(search.toLowerCase()));
+        // console.log(cast.area.toLowerCase().includes(search.toLowerCase()));
         return (
           cast.area.toLowerCase().includes(search.toLowerCase()) ||
           cast.name.toLowerCase().includes(search.toLowerCase())
