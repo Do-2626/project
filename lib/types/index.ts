@@ -26,6 +26,8 @@ export interface CastData {
   column2: number;
   delayInMonths: number;
   paidFromNextInstallment: string;
+  latitude: number;
+  longitude: number;
 }
 
 export interface ApiResponse<T> {

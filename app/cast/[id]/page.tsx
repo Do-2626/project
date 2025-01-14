@@ -111,8 +111,17 @@ export default function CastDetails() {
         onClick={() => router.back()}
         className="mb-6 flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L4.414 9H17a1 1 0 110 2H4.414l5.293 5.293a1 1 0 010 1.414z" clipRule="evenodd" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-5 w-5"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path
+            fillRule="evenodd"
+            d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L4.414 9H17a1 1 0 110 2H4.414l5.293 5.293a1 1 0 010 1.414z"
+            clipRule="evenodd"
+          />
         </svg>
         رجوع
       </button>
@@ -219,6 +228,33 @@ export default function CastDetails() {
               className="w-full"
             />
           </div>
+
+          {/* الموقع الجغرافى */}
+          {/* خط الطول */}
+          <div className="space-y-2">
+            <Label htmlFor="longitude">خط الطول</Label>
+            <Input
+              id="longitude"
+              name="longitude"
+              value={formData?.longitude ?? ""}
+              onChange={handleInputChange}
+              disabled={!isEditing}
+              className="w-full"
+            />
+          </div>
+
+          {/* خط العرض */}
+          <div className="space-y-2">
+            <Label htmlFor="latitude">خط العرض</Label>
+            <Input
+              id="latitude"
+              name="latitude"
+              value={formData?.latitude ?? ""}
+              onChange={handleInputChange}
+              disabled={!isEditing}
+              className="w-full"
+            />
+          </div>
         </div>
 
         <div className="flex justify-end gap-4 mt-8">
@@ -227,7 +263,10 @@ export default function CastDetails() {
               <Button onClick={() => setIsEditing(false)} variant="outline">
                 إلغاء
               </Button>
-              <Button onClick={handleSave} className="bg-green-500 hover:bg-green-600">
+              <Button
+                onClick={handleSave}
+                className="bg-green-500 hover:bg-green-600"
+              >
                 حفظ
               </Button>
             </>
