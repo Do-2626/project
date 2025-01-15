@@ -21,7 +21,7 @@ export default function RootLayout({
         className={`${inter.className} min-h-screen antialiased bg-background`}
       >
         <Navbar />
-        <main className="container mx-auto px-4 py-8 max-w-5xl">
+        <main className="container mx-auto px-4 max-w-5xl">
           {children}
         </main>
       </body>

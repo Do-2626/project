@@ -29,26 +29,14 @@ interface CastData {
   delayInMonths: number;
   paidFromNextInstallment: string;
 }
-interface Language {
-  searchPlaceholder: string;
-}
 
 export default function CastForm() {
   const [casts, setCasts] = useState<CastData[]>([]);
   const [searchedCasts, setSearchedCasts] = useState<CastData[]>([]);
   const [searchCastValue, setSearchCastValue] = useState<string>("");
-  const [language, setLanguage] = useState<Language>({
-    searchPlaceholder: "ابحث عن الاسم او العنوان",
-  });
 
   useEffect(() => {
     fetchTodos();
-    // تعديل language.searchPlaceholder لشاشات الهواتف الى "+"
-    window.innerWidth < 768
-      ? setLanguage({ searchPlaceholder: "+" })
-      : setLanguage({ searchPlaceholder: "إضافة عميل جديد" });
-
-    // console.log(language.searchPlaceholder);
   }, []);
 
   //  دالة البحث عن العميل من خلال المنطقة او الاسم
@@ -78,11 +66,23 @@ export default function CastForm() {
     }
   }
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold">قائمة العملاء</h1>
+    <div className="container mx-auto">
+      
+      {/* ناف بار ثانوية */}
+      <div className="flex flex-col gap-4 my-2">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">قائمة العملاء</h1>
+
+          <Link
+            href="/cast/add"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md"
+          >
+            {`+`}
+          </Link>
+        </div>
+
         {/* البحث عن العميل من خلال المنطقة او الاسم */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 ">
           <input
             type="text"
             value={searchCastValue}
@@ -91,38 +91,57 @@ export default function CastForm() {
             }
             onChange={(e) => searchCast(e.target.value)}
             placeholder={"ابحث عن الاسم او العنوان"}
-            className="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
+            className="px-4 py-2 border rounded-md focus:outline-none w-full focus:ring-2 focus:ring-accent focus:border-accent"
           />
         </div>
-        <Link
-          href="/cast/add"
-          className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md"
-        >
-          {language.searchPlaceholder}
-        </Link>
       </div>
 
-      {/* التصفية حسب العنوان من قائمة منسدلة */}
-      <div className="flex justify-end gap-4 mb-8">
-        <select
-          className="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
-          // onChange={(e) => {
-          //   const selectedArea = e.target.value;
-          //   if (selectedArea === "all") {
-          //     setSearchedCasts([]);
-          //   } else {
-          //     const filteredCasts = casts.filter((cast) =>
-          //       cast.area.toLowerCase().includes(selectedArea.toLowerCase())
-          //     );
-          //     setSearchedCasts(filteredCasts);
-          //   }
-          // }}
-        >
-          <option value="all">الكل</option>
-          <option value="المنصورة">المنصورة</option>
-          <option value="المناخ">المناخ</option>
-          <option value="المناخ الجديد">المناخ الجديد</option>
-        </select>
+      {/* التصفية */}
+      <div className="flex gap-4">
+        {/* التصفية حسب العنوان من قائمة منسدلة */}
+        <div className="flex justify-end gap-4 mb-8">
+          <select
+            className="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
+            // onChange={(e) => {
+            //   const selectedArea = e.target.value;
+            //   if (selectedArea === "all") {
+            //     setSearchedCasts([]);
+            //   } else {
+            //     const filteredCasts = casts.filter((cast) =>
+            //       cast.area.toLowerCase().includes(selectedArea.toLowerCase())
+            //     );
+            //     setSearchedCasts(filteredCasts);
+            //   }
+            // }}
+          >
+            <option value="all">الكل</option>
+            <option value="المنصورة">المنصورة</option>
+            <option value="المناخ">المناخ</option>
+            <option value="المناخ الجديد">المناخ الجديد</option>
+          </select>
+        </div>
+
+        {/* التصفية حسب التحصيل من قائمة منسدلة */}
+        <div className="flex justify-end gap-4 mb-8">
+          <select
+            className="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
+            // onChange={(e) => {
+            //   const selectedArea = e.target.value;
+            //   if (selectedArea === "all") {
+            //     setSearchedCasts([]);
+            //   } else {
+            //     const filteredCasts = casts.filter((cast) =>
+            //       cast.area.toLowerCase().includes(selectedArea.toLowerCase())
+            //     );
+            //     setSearchedCasts(filteredCasts);
+            //   }
+            // }}
+          >
+            <option value="all">الكل</option>
+            <option value="تم التحصيل">تم التحصيل</option>
+            <option value="مطلوب التحصيل">مطلوب التحصيل</option>
+          </select>
+        </div>
       </div>
 
       {/* عرض قائمة العملاء */}
