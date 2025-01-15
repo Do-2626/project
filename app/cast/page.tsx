@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronLeft } from "lucide-react";
 
 interface CastData {
@@ -34,9 +34,10 @@ export default function CastForm() {
   const [casts, setCasts] = useState<CastData[]>([]);
   const [searchedCasts, setSearchedCasts] = useState<CastData[]>([]);
   const [searchCastValue, setSearchCastValue] = useState<string>("");
+  const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    fetchTodos();
+    fetchCast();
   }, []);
 
   //  دالة البحث عن العميل من خلال المنطقة او الاسم
@@ -45,40 +46,76 @@ export default function CastForm() {
       casts.filter((cast) => {
         // console.log(cast.area.toLowerCase().includes(search.toLowerCase()));
         return (
-          cast.area.toLowerCase().includes(search.toLowerCase()) ||
-          cast.name.toLowerCase().includes(search.toLowerCase())
+          cast.name.toLowerCase().includes(search.toLowerCase()) ||
+          cast.area.toLowerCase().includes(search.toLowerCase())
         );
       }) || [];
     setSearchedCasts(filteredCasts);
   };
 
-  async function fetchTodos() {
+  async function fetchCast() {
     try {
       const response = await fetch("/api/cast");
       if (!response.ok) {
-        throw new Error("Failed to fetch todos");
+        throw new Error("Failed to fetch casts");
       }
       const data = await response.json();
       setCasts(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error("Failed to fetch todos:", error);
-      setCasts([]); // Ensure todos is always an array
+      console.error("Failed to fetch casts:", error);
+      setCasts([]); // Ensure casts is always an array
     }
   }
   return (
     <div className="container mx-auto">
-      
       {/* ناف بار ثانوية */}
       <div className="flex flex-col gap-4 my-2">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">قائمة العملاء</h1>
 
-          <Link
-            href="/cast/add"
-            className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md"
-          >
-            {`+`}
-          </Link>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                fetchCast();
+                setSearchCastValue("");
+                setSearchedCasts([]);
+              }}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md"
+            >
+              {" "}
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+            </button>
+            <Link
+              href="/cast/add"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+            </Link>
+          </div>
         </div>
 
         {/* البحث عن العميل من خلال المنطقة او الاسم */}
@@ -86,10 +123,16 @@ export default function CastForm() {
           <input
             type="text"
             value={searchCastValue}
-            onInput={(e) =>
-              setSearchCastValue((e.target as HTMLInputElement).value)
-            }
-            onChange={(e) => searchCast(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              setSearchCastValue(value);
+              if (debounceTimeout.current) {
+                clearTimeout(debounceTimeout.current);
+              }
+              debounceTimeout.current = setTimeout(() => {
+                searchCast(value);
+              }, 500);
+            }}
             placeholder={"ابحث عن الاسم او العنوان"}
             className="px-4 py-2 border rounded-md focus:outline-none w-full focus:ring-2 focus:ring-accent focus:border-accent"
           />
@@ -151,7 +194,7 @@ export default function CastForm() {
           : casts
         ).map((cast: CastData, index: number) => (
           <Link
-            key={index}
+            key={cast._id}
             href={`/cast/${cast._id}`}
             className="group flex items-center justify-between p-4 rounded-lg border bg-card text-card-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
           >
