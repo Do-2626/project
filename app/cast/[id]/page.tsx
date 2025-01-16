@@ -107,32 +107,34 @@ export default function CastDetails() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <button
-        onClick={() => router.back()}
-        className="mb-6 flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-5 w-5"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-        >
-          <path
-            fillRule="evenodd"
-            d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L4.414 9H17a1 1 0 110 2H4.414l5.293 5.293a1 1 0 010 1.414z"
-            clipRule="evenodd"
-          />
-        </svg>
-        رجوع
-      </button>
-
       <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-md p-6">
-        <div className="flex flex-col items-center justify-center space-y-2 mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">تفاصيل العميل</h1>
-          <p className="text-muted-foreground">عرض وتعديل بيانات العميل</p>
+        <div className="flex justify-between items-center">
+          <div className="flex flex-col items-center justify-center space-y-2 mb-8">
+            <h1 className="text-3xl font-bold tracking-tight">تفاصيل العميل</h1>
+            <p className="text-muted-foreground">عرض وتعديل بيانات العميل</p>
+          </div>
+          <button
+            onClick={() => router.back()}
+            className="mb-6 flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
+          >
+            رجوع
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L4.414 9H17a1 1 0 110 2H4.414l5.293 5.293a1 1 0 010 1.414z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* الاسم */}
           <div className="space-y-2">
             <Label htmlFor="name">الاسم</Label>
             <Input
@@ -145,6 +147,7 @@ export default function CastDetails() {
             />
           </div>
 
+          {/* رقم الهاتف */}
           <div className="space-y-2">
             <Label htmlFor="phone">رقم الهاتف</Label>
             <Input
@@ -157,6 +160,7 @@ export default function CastDetails() {
             />
           </div>
 
+          {/* العنوان */}
           <div className="space-y-2">
             <Label htmlFor="address">العنوان</Label>
             <Input
@@ -169,6 +173,7 @@ export default function CastDetails() {
             />
           </div>
 
+          {/* عدد الكراسى */}
           <div className="space-y-2">
             <Label htmlFor="k">عدد الكراسى</Label>
             <Input
@@ -181,6 +186,7 @@ export default function CastDetails() {
             />
           </div>
 
+          {/* عدد الترابيزات */}
           <div className="space-y-2">
             <Label htmlFor="t">عدد الترابيزات</Label>
             <Input
@@ -193,6 +199,7 @@ export default function CastDetails() {
             />
           </div>
 
+          {/* المقدم */}
           <div className="space-y-2">
             <Label htmlFor="advance">المقدم</Label>
             <Input
@@ -205,6 +212,7 @@ export default function CastDetails() {
             />
           </div>
 
+          {/* المبلغ */}
           <div className="space-y-2">
             <Label htmlFor="amount">المبلغ</Label>
             <Input
@@ -217,6 +225,7 @@ export default function CastDetails() {
             />
           </div>
 
+          {/* عدد الاقساط */}
           <div className="space-y-2">
             <Label htmlFor="installmentCount">عدد الاقساط</Label>
             <Input
@@ -230,30 +239,59 @@ export default function CastDetails() {
           </div>
 
           {/* الموقع الجغرافى */}
-          {/* خط الطول */}
-          <div className="space-y-2">
-            <Label htmlFor="longitude">خط الطول</Label>
-            <Input
-              id="longitude"
-              name="longitude"
-              value={formData?.longitude ?? ""}
-              onChange={handleInputChange}
-              disabled={!isEditing}
-              className="w-full"
-            />
-          </div>
+          <div className="col-span-2">
+            <div className="flex justify-between items-end gap-2">
+              {/* خط الطول */}
+              <div className="space-y-2">
+                <Label htmlFor="longitude">خط الطول</Label>
+                <Input
+                  id="longitude"
+                  name="longitude"
+                  value={formData?.longitude ?? ""}
+                  onChange={handleInputChange}
+                  disabled={!isEditing}
+                  className="w-full"
+                />
+              </div>
 
-          {/* خط العرض */}
-          <div className="space-y-2">
-            <Label htmlFor="latitude">خط العرض</Label>
-            <Input
-              id="latitude"
-              name="latitude"
-              value={formData?.latitude ?? ""}
-              onChange={handleInputChange}
-              disabled={!isEditing}
-              className="w-full"
-            />
+              {/* خط العرض */}
+              <div className="space-y-2">
+                <Label htmlFor="latitude">خط العرض</Label>
+                <Input
+                  id="latitude"
+                  name="latitude"
+                  value={formData?.latitude ?? ""}
+                  onChange={handleInputChange}
+                  disabled={!isEditing}
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <Button
+                  onClick={() => {
+                    // TODO: Implement location update logic
+                    if ("geolocation" in navigator) {
+                      navigator.geolocation.getCurrentPosition((position) => {
+                        setFormData((prev) => {
+                          if (!prev) return null;
+                          return {
+                            ...prev,
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                          };
+                        });
+                      });
+                    }
+                  }}
+                  type="button"
+                  disabled={!isEditing}
+                  variant="outline"
+                  className="mr-4"
+                >
+                  تحديث الموقع
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
 
