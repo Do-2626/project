@@ -19,6 +19,7 @@ const castSchema = new mongoose.Schema({
   printStatus: { type: String, default: "" },
   upcomingCollectionAmount: { type: Number },
   nextInstallment: { type: Number },
+  next: { type: Number },
   piecePrice: { type: Number },
   status: { type: String },
   column2: { type: Number },

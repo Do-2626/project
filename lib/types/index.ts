@@ -21,6 +21,7 @@ export interface CastData {
   printStatus: string;
   upcomingCollectionAmount: number;
   nextInstallment: number;
+  next: number;
   piecePrice: number;
   status: string;
   column2: number;

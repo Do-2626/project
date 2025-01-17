@@ -6,6 +6,12 @@ import { useState } from "react";
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  const links = [
+    { text: "المهام", href: "/" },
+    { text: "العملاء", href: "/cast" },
+    { text: "الملف الشخصي", href: "/profile" },
+  ];
+
   return (
     <nav className="bg-white shadow-lg">
       <div className="container mx-auto px-4">
@@ -19,15 +25,15 @@ export default function Navbar() {
 
           {/* Desktop Menu */}
           <div className="hidden md:flex space-x-8 space-x-reverse">
-            <Link href="/" className="hover:text-blue-600">
-              المهام
-            </Link>
-            <Link href="/tasks" className="hover:text-blue-600">
-              العملاء
-            </Link>
-            <Link href="/profile" className="hover:text-blue-600">
-              الملف الشخصي
-            </Link>
+            {links.map((link, index) => (
+              <Link
+                key={index}
+                href={link.href}
+                className="hover:text-blue-600"
+              >
+                {link.text}
+              </Link>
+            ))}
           </div>
 
           {/* Mobile Menu Button */}
@@ -66,24 +72,15 @@ export default function Navbar() {
         {isMenuOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1">
-              <Link
-                href="/"
-                className="block px-3 py-2 rounded-md hover:bg-gray-100"
-              >
-                المهام
-              </Link>
-              <Link
-                href="/cast"
-                className="block px-3 py-2 rounded-md hover:bg-gray-100"
-              >
-                العملاء
-              </Link>
-              <Link
-                href="/profile"
-                className="block px-3 py-2 rounded-md hover:bg-gray-100"
-              >
-                الملف الشخصي
-              </Link>
+              {links.map((link, index) => (
+                <Link
+                  className="block px-3 py-2 rounded-md hover:bg-gray-100"
+                  key={index}
+                  href={link.href}
+                >
+                  {link.text}
+                </Link>
+              ))}
             </div>
           </div>
         )}

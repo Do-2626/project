@@ -133,9 +133,9 @@ export default function CastDetails() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="flex flex-wrap gap-6">
           {/* الاسم */}
-          <div className="space-y-2">
+          <div className="space-y-2 w-full md:w-[calc(50%-12px)]">
             <Label htmlFor="name">الاسم</Label>
             <Input
               id="name"
@@ -148,7 +148,7 @@ export default function CastDetails() {
           </div>
 
           {/* رقم الهاتف */}
-          <div className="space-y-2">
+          <div className="space-y-2 w-full md:w-[calc(50%-12px)]">
             <Label htmlFor="phone">رقم الهاتف</Label>
             <Input
               id="phone"
@@ -161,7 +161,7 @@ export default function CastDetails() {
           </div>
 
           {/* العنوان */}
-          <div className="space-y-2">
+          <div className="space-y-2 w-full md:w-[calc(50%-12px)]">
             <Label htmlFor="address">العنوان</Label>
             <Input
               id="address"
@@ -174,7 +174,7 @@ export default function CastDetails() {
           </div>
 
           {/* عدد الكراسى */}
-          <div className="space-y-2">
+          <div className="space-y-2 w-full md:w-[calc(50%-12px)]">
             <Label htmlFor="k">عدد الكراسى</Label>
             <Input
               id="k"
@@ -187,7 +187,7 @@ export default function CastDetails() {
           </div>
 
           {/* عدد الترابيزات */}
-          <div className="space-y-2">
+          <div className="space-y-2 w-full md:w-[calc(50%-12px)]">
             <Label htmlFor="t">عدد الترابيزات</Label>
             <Input
               id="t"
@@ -200,7 +200,7 @@ export default function CastDetails() {
           </div>
 
           {/* المقدم */}
-          <div className="space-y-2">
+          <div className="space-y-2 w-full md:w-[calc(50%-12px)]">
             <Label htmlFor="advance">المقدم</Label>
             <Input
               id="advance"
@@ -213,7 +213,7 @@ export default function CastDetails() {
           </div>
 
           {/* المبلغ */}
-          <div className="space-y-2">
+          <div className="space-y-2 w-full md:w-[calc(50%-12px)]">
             <Label htmlFor="amount">المبلغ</Label>
             <Input
               id="amount"
@@ -226,7 +226,7 @@ export default function CastDetails() {
           </div>
 
           {/* عدد الاقساط */}
-          <div className="space-y-2">
+          <div className="space-y-2 w-full md:w-[calc(50%-12px)]">
             <Label htmlFor="installmentCount">عدد الاقساط</Label>
             <Input
               id="installmentCount"
@@ -239,10 +239,10 @@ export default function CastDetails() {
           </div>
 
           {/* الموقع الجغرافى */}
-          <div className="col-span-2">
-            <div className="flex justify-between items-end gap-2">
+          <div className="w-full">
+            <div className="flex flex-wrap gap-2">
               {/* خط الطول */}
-              <div className="space-y-2">
+              <div className="space-y-2 flex-1">
                 <Label htmlFor="longitude">خط الطول</Label>
                 <Input
                   id="longitude"
@@ -255,7 +255,7 @@ export default function CastDetails() {
               </div>
 
               {/* خط العرض */}
-              <div className="space-y-2">
+              <div className="space-y-2 flex-1">
                 <Label htmlFor="latitude">خط العرض</Label>
                 <Input
                   id="latitude"
@@ -266,10 +266,9 @@ export default function CastDetails() {
                   className="w-full"
                 />
               </div>
-              <div>
+              <div className="flex items-end">
                 <Button
                   onClick={() => {
-                    // TODO: Implement location update logic
                     if ("geolocation" in navigator) {
                       navigator.geolocation.getCurrentPosition((position) => {
                         setFormData((prev) => {
@@ -286,12 +285,55 @@ export default function CastDetails() {
                   type="button"
                   disabled={!isEditing}
                   variant="outline"
-                  className="mr-4"
                 >
                   تحديث الموقع
                 </Button>
               </div>
             </div>
+          </div>
+
+          {/* القسط التالى */}
+          <div className="space-y-2 w-full md:w-[calc(50%-12px)]">
+            <Label htmlFor="nextInstallment">القسط التالى</Label>
+            <Input
+              id="nextInstallment"
+              name="nextInstallment"
+              value={formData?.next ?? ""}
+              onChange={handleInputChange}
+              disabled={!isEditing}
+              className="w-full"
+            />
+          </div>
+
+          {/* مجموع الاقساط المتبقية */}
+          <div className="space-y-2 w-full md:w-[calc(50%-12px)]">
+            <Label htmlFor="remainingAmount">عدد الاقساط المتبقية</Label>
+            <Input
+              id="remainingAmount"
+              name="remainingAmount"
+              value={formData ? formData.installmentCount - formData.next : 0}
+              onChange={handleInputChange}
+              disabled={!isEditing}
+              className="w-full"
+            />
+          </div>
+
+          {/* مجموع المبلغ المتبقى */}
+          <div className="space-y-2 w-full md:w-[calc(50%-12px)]">
+            <Label htmlFor="remainingAmount">مجموع المبلغ المتبقى</Label>
+            <Input
+              id="remainingAmount"
+              name="remainingAmount"
+              value={
+                formData
+                  ? formData.amount *
+                    (formData.installmentCount - formData.next + 1)
+                  : 0
+              }
+              onChange={handleInputChange}
+              disabled={!isEditing}
+              className="w-full"
+            />
           </div>
         </div>
 
