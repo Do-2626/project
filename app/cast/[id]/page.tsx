@@ -108,6 +108,7 @@ export default function CastDetails() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-md p-6">
+        {/* العنوان */}
         <div className="flex justify-between items-center">
           <div className="flex flex-col items-center justify-center space-y-2 mb-8">
             <h1 className="text-3xl font-bold tracking-tight">تفاصيل العميل</h1>
@@ -133,6 +134,7 @@ export default function CastDetails() {
           </button>
         </div>
 
+        {/* البيانات */}
         <div className="flex flex-wrap gap-6">
           {/* الاسم */}
           <div className="space-y-2 w-full md:w-[calc(50%-12px)]">
@@ -199,43 +201,59 @@ export default function CastDetails() {
             />
           </div>
 
-          {/* المقدم */}
+          {/* تاريخ البيع */}
           <div className="space-y-2 w-full md:w-[calc(50%-12px)]">
-            <Label htmlFor="advance">المقدم</Label>
+            <Label htmlFor="date">تاريخ البداية</Label>
             <Input
-              id="advance"
-              name="advance"
-              value={formData?.advance ?? ""}
+              id="date"
+              name="date"
+              value={formData?.date ?? ""}
               onChange={handleInputChange}
-              disabled={!isEditing}
+              disabled={true}
               className="w-full"
             />
           </div>
 
-          {/* المبلغ */}
-          <div className="space-y-2 w-full md:w-[calc(50%-12px)]">
-            <Label htmlFor="amount">المبلغ</Label>
-            <Input
-              id="amount"
-              name="amount"
-              value={formData?.amount ?? ""}
-              onChange={handleInputChange}
-              disabled={!isEditing}
-              className="w-full"
-            />
-          </div>
+          {/* معلومات الدفع */}
+          <div className="flex flex-wrap justify-between gap-6 w-full">
+            {/* المقدم */}
+            <div className="space-y-2 w-full md:w-[calc(30%-12px)]">
+              <Label htmlFor="advance">المقدم</Label>
+              <Input
+                id="advance"
+                name="advance"
+                value={formData?.advance ?? ""}
+                onChange={handleInputChange}
+                disabled={!isEditing}
+                className="w-full"
+              />
+            </div>
 
-          {/* عدد الاقساط */}
-          <div className="space-y-2 w-full md:w-[calc(50%-12px)]">
-            <Label htmlFor="installmentCount">عدد الاقساط</Label>
-            <Input
-              id="installmentCount"
-              name="installmentCount"
-              value={formData?.installmentCount ?? ""}
-              onChange={handleInputChange}
-              disabled={!isEditing}
-              className="w-full"
-            />
+            {/* المبلغ */}
+            <div className="space-y-2 w-full md:w-[calc(30%-12px)]">
+              <Label htmlFor="amount">المبلغ</Label>
+              <Input
+                id="amount"
+                name="amount"
+                value={formData?.amount ?? ""}
+                onChange={handleInputChange}
+                disabled={!isEditing}
+                className="w-full"
+              />
+            </div>
+
+            {/* عدد الاقساط */}
+            <div className="space-y-2 w-full md:w-[calc(30%-12px)]">
+              <Label htmlFor="installmentCount">عدد الاقساط</Label>
+              <Input
+                id="installmentCount"
+                name="installmentCount"
+                value={formData?.installmentCount ?? ""}
+                onChange={handleInputChange}
+                disabled={!isEditing}
+                className="w-full"
+              />
+            </div>
           </div>
 
           {/* الموقع الجغرافى */}
@@ -249,7 +267,7 @@ export default function CastDetails() {
                   name="longitude"
                   value={formData?.longitude ?? ""}
                   onChange={handleInputChange}
-                  disabled={!isEditing}
+                  disabled={true}
                   className="w-full"
                 />
               </div>
@@ -262,7 +280,7 @@ export default function CastDetails() {
                   name="latitude"
                   value={formData?.latitude ?? ""}
                   onChange={handleInputChange}
-                  disabled={!isEditing}
+                  disabled={true}
                   className="w-full"
                 />
               </div>
@@ -300,7 +318,7 @@ export default function CastDetails() {
               name="nextInstallment"
               value={formData?.next ?? ""}
               onChange={handleInputChange}
-              disabled={!isEditing}
+              disabled={true}
               className="w-full"
             />
           </div>
@@ -313,7 +331,7 @@ export default function CastDetails() {
               name="remainingAmount"
               value={formData ? formData.installmentCount - formData.next : 0}
               onChange={handleInputChange}
-              disabled={!isEditing}
+              disabled={true}
               className="w-full"
             />
           </div>
@@ -331,12 +349,13 @@ export default function CastDetails() {
                   : 0
               }
               onChange={handleInputChange}
-              disabled={!isEditing}
+              disabled={true}
               className="w-full"
             />
           </div>
         </div>
 
+        {/* الاجراءات */}
         <div className="flex justify-end gap-4 mt-8">
           {isEditing ? (
             <>
@@ -352,9 +371,66 @@ export default function CastDetails() {
             </>
           ) : (
             <>
+              {/* اصدار ايصال بالقسط التالى */}
+              <Button
+                onClick={() => {
+                  router.push(`/cast/receipt/${params.id}`);
+                }}
+              >
+                اصدار ايصال بالقسط التالى
+              </Button>
+              {/* عرض الاقساط السابقة */}
+              <Button
+                onClick={() => {
+                  const printWindow = window.open("", "_blank");
+                  if (printWindow) {
+                    printWindow.document.write(`
+                    <html dir="rtl">
+                      <head>
+                        <title>الأقساط السابقة</title>
+                        <style>
+                          body { font-family: Arial, sans-serif; padding: 20px; }
+                          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                          th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
+                          th { background-color: #f2f2f2; }
+                        </style>
+                      </head>
+                      <body>
+                        <h2>الأقساط المدفوعة للعميل: ${cast?.name}</h2>
+                        <table>
+                          <tr>
+                            <th>رقم القسط</th>
+                            <th>المبلغ</th>
+                            <th>التاريخ</th>
+                          </tr>
+                          ${Array.from(
+                            { length: cast?.next || 0 },
+                            (_, i) => `
+                            <tr>
+                              <td>${i + 1}</td>
+                              <td>${cast?.amount}</td>
+                              <td>-</td>
+                            </tr>
+                          `
+                          ).join("")}
+                        </table>
+                      </body>
+                    </html>
+                  `);
+                    printWindow.document.close();
+                  }
+                }}
+                variant="outline"
+              >
+                عرض الأقساط السابقة
+              </Button>
+
+              {/* تعديل */}
               <Button onClick={() => setIsEditing(true)} variant="outline">
                 تعديل
               </Button>
+
+              {/* حذف */}
               <Button onClick={handleDelete} variant="destructive">
                 حذف
               </Button>

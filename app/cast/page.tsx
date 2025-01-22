@@ -35,17 +35,20 @@ export default function CastForm() {
   const [searchedCasts, setSearchedCasts] = useState<CastData[]>([]);
   const [searchCastValue, setSearchCastValue] = useState<string>("");
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCast();
   }, []);
 
-  //  دالة البحث عن العميل من خلال المنطقة او الاسم
+  //  دالة البحث عن العميل من خلال او الكود المنطقة او الاسم
   const searchCast = (search: string) => {
     const filteredCasts =
       casts.filter((cast) => {
-        // console.log(cast.area.toLowerCase().includes(search.toLowerCase()));
         return (
+          String(cast.customerCode)
+            .toLowerCase()
+            .includes(search.toLowerCase()) ||
           cast.name.toLowerCase().includes(search.toLowerCase()) ||
           cast.area.toLowerCase().includes(search.toLowerCase())
         );
@@ -133,7 +136,7 @@ export default function CastForm() {
                 searchCast(value);
               }, 500);
             }}
-            placeholder={"ابحث عن الاسم او العنوان"}
+            placeholder={"ابحث عن الكود او الاسم او العنوان"}
             className="px-4 py-2 border rounded-md focus:outline-none w-full focus:ring-2 focus:ring-accent focus:border-accent"
           />
         </div>
@@ -189,10 +192,11 @@ export default function CastForm() {
 
       {/* عرض قائمة العملاء */}
       <div className="grid gap-4">
-        {(searchedCasts.length > 0 || searchCastValue.length > 0
+        {(searchedCasts.length > 0 || // لو كان في بحث
+        searchCastValue.length > 0 // لو كان في قيمة بحث
           ? searchedCasts
           : casts
-        ).map((cast: CastData, index: number) => (
+        ).map((cast: CastData) => (
           <Link
             key={cast._id}
             href={`/cast/${cast._id}`}
