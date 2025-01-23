@@ -4,27 +4,6 @@ import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import "leaflet/dist/leaflet.css";
 import type { CastData } from "@/lib/types";
-import L from "leaflet";
-
-// تعريف الأيقونة المخصصة
-const customIcon = L.divIcon({
-  className: "custom-marker",
-  html: `<svg
-    viewBox="0 0 24 24"
-    width="24"
-    height="24"
-    fill="currentColor"
-    className="text-primary"
-  >
-    <path
-      fill="#2563eb"
-      d="M12 0C7.802 0 4 3.403 4 7.602 4 11.8 12 24 12 24s8-12.198 8-16.398C20 3.403 16.199 0 12 0zm0 11c-1.657 0-3-1.343-3-3s1.343-3 3-3 3 1.343 3 3-1.343 3-3 3z"
-    />
-  </svg>`,
-  iconSize: [24, 24],
-  iconAnchor: [12, 24],
-  popupAnchor: [0, -24],
-});
 
 // تحميل الخريطة بشكل ديناميكي (Client-Side فقط)
 const MapContainer = dynamic(
@@ -43,29 +22,14 @@ const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), {
   ssr: false,
 });
 
+// تحميل leaflet بشكل ديناميكي
+const L = dynamic(() => import("leaflet"), { ssr: false });
+
 export default function CastMapPage() {
   const [casts, setCasts] = useState<CastData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [center, setCenter] = useState<[number, number]>([30.0444, 31.2357]); // القيمة الافتراضية (القاهرة)
-
-  // إضافة CSS للأيقونة المخصصة باستخدام useEffect
-  useEffect(() => {
-    const styles = `
-      .custom-marker {
-        background: none;
-        border: none;
-      }
-    `;
-    const styleSheet = document.createElement("style");
-    styleSheet.innerText = styles;
-    document.head.appendChild(styleSheet);
-
-    // تنظيف الأنماط عند إلغاء التثبيت
-    return () => {
-      document.head.removeChild(styleSheet);
-    };
-  }, []);
 
   // جلب بيانات العملاء من الـ API
   useEffect(() => {
@@ -106,7 +70,7 @@ export default function CastMapPage() {
 
     fetchCasts();
   }, []);
- 
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -141,7 +105,11 @@ export default function CastMapPage() {
             <Marker
               key={cast._id}
               position={[cast.latitude!, cast.longitude!]} // استخدام ! لأننا تأكدنا من وجود القيم
-              icon={customIcon}
+              icon={L.icon({
+                iconUrl: "/marker-icon.png", // مسار الأيقونة
+                iconSize: [25, 41], // حجم الأيقونة
+                iconAnchor: [12, 41], // نقطة تثبيت الأيقونة
+              })}
             >
               <Popup>
                 <div className="space-y-2">
