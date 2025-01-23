@@ -9,6 +9,7 @@ export default function Navbar() {
   const links = [
     { text: "المهام", href: "/" },
     { text: "العملاء", href: "/cast" },
+    { text: "الخريطة", href: "/cast/map" },
     { text: "الملف الشخصي", href: "/profile" },
   ];
 
