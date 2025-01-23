@@ -33,9 +33,9 @@ const Map = ({
     // Fix Leaflet default icon issue
     delete (L.Icon.Default.prototype as any)._getIconUrl;
     L.Icon.Default.mergeOptions({
-      iconRetinaUrl: "/marker-icon-2x.png",
-      iconUrl: "/marker-icon.png",
-      shadowUrl: "/marker-shadow.png",
+      iconRetinaUrl: "/images/markers/marker-icon-2x.png",
+      iconUrl: "/images/markers/marker-icon.png",
+      shadowUrl: "/images/markers/marker-shadow.png",
     });
   }, []);
 
@@ -59,8 +59,8 @@ const Map = ({
             key={cast._id}
             position={[cast.latitude!, cast.longitude!]}
             icon={L.icon({
-              iconUrl: "/marker-icon.png",
-              iconSize: [25, 41],
+              iconUrl: "/images/markers/marker-icon.png",
+              iconSize: [16, 24],
               iconAnchor: [12, 41],
             })}
           >
