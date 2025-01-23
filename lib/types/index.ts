@@ -37,4 +37,22 @@ export interface ApiResponse<T> {
   error?: string;
 }
 
-// Add other interfaces as needed
+export interface FormData {
+  customerCode: number;
+  monthDate: string;
+  date: string;
+  name: string;
+  phone: string;
+  k: number;
+  t: number;
+  otherProducts: string;
+  advance: number;
+  amount: number;
+  installments: number;
+  product: string;
+  area: string;
+  notes: string;
+  status: string;
+  latitude?: number;
+  longitude?: number;
+}
