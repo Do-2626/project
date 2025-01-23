@@ -23,7 +23,8 @@ const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), {
 });
 
 // تحميل leaflet بشكل ديناميكي
-const L = dynamic(() => import("leaflet"), { ssr: false });
+// const L = dynamic(() => import("leaflet"), { ssr: false });
+const L = require("leaflet");
 
 export default function CastMapPage() {
   const [casts, setCasts] = useState<CastData[]>([]);
