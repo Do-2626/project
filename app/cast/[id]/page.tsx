@@ -4,12 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { CastData } from "@/lib/types";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
 export default function CastDetails() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const [cast, setCast] = useState<CastData | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -18,24 +19,17 @@ export default function CastDetails() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchCast = async () => {
-      try {
-        const response = await fetch(`/api/cast/${params.id}`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch data");
-        }
-        const data = await response.json();
-        setCast(data);
-        setFormData(data);
-      } catch (error) {
-        setError("Error fetching cast data");
-        console.error("Error fetching cast:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchCast();
-  }, [params.id]);
+    const castData = searchParams.get("data");
+    if (castData) {
+      const parsedData = JSON.parse(castData) as CastData;
+      setCast(parsedData);
+      setFormData(parsedData);
+      setIsLoading(false);
+    } else {
+      setError("بيانات العميل غير متوفرة");
+      setIsLoading(false);
+    }
+  }, [searchParams]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -50,18 +44,7 @@ export default function CastDetails() {
 
   const handleSave = async () => {
     try {
-      const response = await fetch(`/api/cast/${params.id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to update");
-      }
-
+      // هنا يمكنك تحديث البيانات المحلية أو إرسالها إلى الخادم إذا لزم الأمر
       setCast(formData);
       setIsEditing(false);
     } catch (error) {
@@ -75,14 +58,7 @@ export default function CastDetails() {
     }
 
     try {
-      const response = await fetch(`/api/cast/${params.id}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to delete");
-      }
-
+      // هنا يمكنك حذف البيانات المحلية أو إرسال طلب حذف إلى الخادم إذا لزم الأمر
       router.push("/cast");
     } catch (error) {
       console.error("Error deleting cast:", error);
@@ -109,14 +85,16 @@ export default function CastDetails() {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-md p-6">
         {/* العنوان */}
-        <div className="flex justify-between items-center">
-          <div className="flex flex-col items-center justify-center space-y-2 mb-8">
-            <h1 className="text-3xl font-bold tracking-tight">تفاصيل العميل</h1>
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6">
+          <div className="text-center md:text-left mb-4 md:mb-0">
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+              تفاصيل العميل
+            </h1>
             <p className="text-muted-foreground">عرض وتعديل بيانات العميل</p>
           </div>
           <button
             onClick={() => router.back()}
-            className="mb-6 flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
           >
             رجوع
             <svg
@@ -135,9 +113,9 @@ export default function CastDetails() {
         </div>
 
         {/* البيانات */}
-        <div className="flex flex-wrap gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* الاسم */}
-          <div className="space-y-2 w-full md:w-[calc(50%-12px)]">
+          <div className="space-y-2">
             <Label htmlFor="name">الاسم</Label>
             <Input
               id="name"
@@ -150,7 +128,7 @@ export default function CastDetails() {
           </div>
 
           {/* رقم الهاتف */}
-          <div className="space-y-2 w-full md:w-[calc(50%-12px)]">
+          <div className="space-y-2">
             <Label htmlFor="phone">رقم الهاتف</Label>
             <Input
               id="phone"
@@ -163,7 +141,7 @@ export default function CastDetails() {
           </div>
 
           {/* العنوان */}
-          <div className="space-y-2 w-full md:w-[calc(50%-12px)]">
+          <div className="space-y-2">
             <Label htmlFor="address">العنوان</Label>
             <Input
               id="address"
@@ -176,7 +154,7 @@ export default function CastDetails() {
           </div>
 
           {/* عدد الكراسى */}
-          <div className="space-y-2 w-full md:w-[calc(50%-12px)]">
+          <div className="space-y-2">
             <Label htmlFor="k">عدد الكراسى</Label>
             <Input
               id="k"
@@ -189,7 +167,7 @@ export default function CastDetails() {
           </div>
 
           {/* عدد الترابيزات */}
-          <div className="space-y-2 w-full md:w-[calc(50%-12px)]">
+          <div className="space-y-2">
             <Label htmlFor="t">عدد الترابيزات</Label>
             <Input
               id="t"
@@ -202,7 +180,7 @@ export default function CastDetails() {
           </div>
 
           {/* تاريخ البيع */}
-          <div className="space-y-2 w-full md:w-[calc(50%-12px)]">
+          <div className="space-y-2">
             <Label htmlFor="date">تاريخ البداية</Label>
             <Input
               id="date"
@@ -215,9 +193,9 @@ export default function CastDetails() {
           </div>
 
           {/* معلومات الدفع */}
-          <div className="flex flex-wrap justify-between gap-6 w-full">
+          <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* المقدم */}
-            <div className="space-y-2 w-full md:w-[calc(30%-12px)]">
+            <div className="space-y-2">
               <Label htmlFor="advance">المقدم</Label>
               <Input
                 id="advance"
@@ -230,7 +208,7 @@ export default function CastDetails() {
             </div>
 
             {/* المبلغ */}
-            <div className="space-y-2 w-full md:w-[calc(30%-12px)]">
+            <div className="space-y-2">
               <Label htmlFor="amount">المبلغ</Label>
               <Input
                 id="amount"
@@ -243,7 +221,7 @@ export default function CastDetails() {
             </div>
 
             {/* عدد الاقساط */}
-            <div className="space-y-2 w-full md:w-[calc(30%-12px)]">
+            <div className="space-y-2">
               <Label htmlFor="installmentCount">عدد الاقساط</Label>
               <Input
                 id="installmentCount"
@@ -257,11 +235,11 @@ export default function CastDetails() {
           </div>
 
           {/* الموقع الجغرافى */}
-          <div className="w-full">
-            <div className="flex flex-wrap gap-2">
+          <div className="col-span-1 md:col-span-2 space-y-2">
+            <Label>الموقع الجغرافى</Label>
+            <div className="flex flex-col md:flex-row gap-4">
               {/* خط الطول */}
-              <div className="space-y-2 flex-1">
-                <Label htmlFor="longitude">خط الطول</Label>
+              <div className="flex-1">
                 <Input
                   id="longitude"
                   name="longitude"
@@ -273,8 +251,7 @@ export default function CastDetails() {
               </div>
 
               {/* خط العرض */}
-              <div className="space-y-2 flex-1">
-                <Label htmlFor="latitude">خط العرض</Label>
+              <div className="flex-1">
                 <Input
                   id="latitude"
                   name="latitude"
@@ -311,7 +288,7 @@ export default function CastDetails() {
           </div>
 
           {/* القسط التالى */}
-          <div className="space-y-2 w-full md:w-[calc(50%-12px)]">
+          <div className="space-y-2">
             <Label htmlFor="nextInstallment">القسط التالى</Label>
             <Input
               id="nextInstallment"
@@ -324,7 +301,7 @@ export default function CastDetails() {
           </div>
 
           {/* مجموع الاقساط المتبقية */}
-          <div className="space-y-2 w-full md:w-[calc(50%-12px)]">
+          <div className="space-y-2">
             <Label htmlFor="remainingAmount">عدد الاقساط المتبقية</Label>
             <Input
               id="remainingAmount"
@@ -337,7 +314,7 @@ export default function CastDetails() {
           </div>
 
           {/* مجموع المبلغ المتبقى */}
-          <div className="space-y-2 w-full md:w-[calc(50%-12px)]">
+          <div className="space-y-2">
             <Label htmlFor="remainingAmount">مجموع المبلغ المتبقى</Label>
             <Input
               id="remainingAmount"
@@ -356,7 +333,7 @@ export default function CastDetails() {
         </div>
 
         {/* الاجراءات */}
-        <div className="flex justify-end gap-4 mt-8">
+        <div className="flex flex-col md:flex-row justify-end gap-4 mt-8">
           {isEditing ? (
             <>
               <Button onClick={() => setIsEditing(false)} variant="outline">

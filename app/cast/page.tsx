@@ -167,7 +167,10 @@ export default function CastForm() {
           ).map((cast: CastData) => (
             <Link
               key={cast._id}
-              href={`/cast/${cast._id}`}
+              href={{
+                pathname: `/cast/${cast._id}`,
+                query: { data: JSON.stringify(cast) }, // تمرير بيانات العميل كـ query parameter
+              }}
               className="group flex items-center justify-between p-4 rounded-lg border bg-card text-card-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
             >
               <div className="flex flex-col gap-1">
