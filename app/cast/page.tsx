@@ -116,7 +116,7 @@ export default function CastForm() {
             </Button>
             <Link
               href="/cast/add"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md"
+              className="place-content-center bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md"
             >
               <svg
                 className="w-4 h-4"
