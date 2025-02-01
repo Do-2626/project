@@ -127,7 +127,7 @@ export default function Home() {
         </div>
 
         <form onSubmit={addTodo} className="mb-8 space-y-4">
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-col-reverse sm:flex-row">
             <input
               type="text"
               value={newTodo}
@@ -138,7 +138,7 @@ export default function Home() {
             />
             <button
               type="submit"
-              className="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors"
+              className="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors sm:w-auto w-full"
             >
               إضافة
             </button>
