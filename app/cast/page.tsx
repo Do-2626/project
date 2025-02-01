@@ -171,7 +171,9 @@ export default function CastForm() {
                 pathname: `/cast/${cast._id}`,
                 query: { data: JSON.stringify(cast) }, // تمرير بيانات العميل كـ query parameter
               }}
-              className="group flex items-center justify-between p-4 rounded-lg border bg-card text-card-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+              className={`group flex items-center justify-between p-4 rounded-lg border ${
+                cast.status === "جارى" ?   `bg-card`:`bg-red-200`
+              } text-card-foreground hover:bg-accent hover:text-accent-foreground transition-colors`}
             >
               <div className="flex flex-col gap-1">
                 <span className="font-medium">{cast.name}</span>
