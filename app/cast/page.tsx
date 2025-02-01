@@ -172,7 +172,7 @@ export default function CastForm() {
                 query: { data: JSON.stringify(cast) }, // تمرير بيانات العميل كـ query parameter
               }}
               className={`group flex items-center justify-between p-4 rounded-lg border ${
-                cast.status === "جارى" ?   `bg-card`:`bg-red-200`
+                cast.status === "جارى" ? `bg-card` : `bg-red-200`
               } text-card-foreground hover:bg-accent hover:text-accent-foreground transition-colors`}
             >
               <div className="flex flex-col gap-1">
@@ -184,6 +184,10 @@ export default function CastForm() {
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">
                   {cast.area}
+                  <br />
+                  {cast.installmentCount - (cast.next - 1) >= 0
+                    ? `باقى ${cast.installmentCount - (cast.next - 1)} قسط`
+                    : ""}
                 </span>
                 <ChevronLeft className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
