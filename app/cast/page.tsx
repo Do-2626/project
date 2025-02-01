@@ -69,6 +69,11 @@ export default function CastForm() {
 
   // Manual refresh handler
   const handleRefresh = () => {
+    // اختبار ما اذا كان يتوفر اتصال بالانترنت
+    if (!navigator.onLine) {
+      setError("لا يوجد اتصال بالإنترنت");
+      return;
+    }
     fetchCast(false); // Skip cache on manual refresh
   };
 
@@ -101,8 +106,18 @@ export default function CastForm() {
                 ? `(${searchedCasts.length})`
                 : `(${casts.length})`}
             </span>
+            {/*  اظهار عدد النتائج الجارية */}
+            <span className="text-sm text-muted-foreground">
+              {` | `}
+              {casts.filter((cast) => cast.status === "جارى").length > 0
+                ? `(${
+                    casts.filter((cast) => cast.status === "جارى").length
+                  } جارى)`
+                : ""}
+            </span>
           </h1>
           <div className="flex gap-2">
+            {/* زر تحديث */}
             <Button
               onClick={handleRefresh}
               variant="outline"
@@ -122,6 +137,25 @@ export default function CastForm() {
                 />
               </svg>
             </Button>
+            {/* زر التصفية */}
+            <Button
+              onClick={resetSearch}
+              variant="outline"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md"
+            >
+              <svg
+                className="w-4 h-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" />
+              </svg>
+            </Button>
+            {/* زر اضافة عميل جديد */}
             <Link
               href="/cast/add"
               className="place-content-center bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md"
