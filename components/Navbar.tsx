@@ -78,6 +78,7 @@ export default function Navbar() {
                   className="block px-3 py-2 rounded-md hover:bg-gray-100"
                   key={index}
                   href={link.href}
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
                 >
                   {link.text}
                 </Link>
