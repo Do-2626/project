@@ -93,7 +93,15 @@ export default function CastForm() {
       {/* ناف بار ثانوية */}
       <div className="flex flex-col gap-4 my-2">
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">قائمة العملاء</h1>
+          <h1 className="text-2xl font-bold">
+            قائمة العملاء
+            {/* اظهار عدد النتائج */}
+            <span className="text-sm text-muted-foreground">
+              {searchedCasts.length > 0 || searchCastValue.length > 0
+                ? `(${searchedCasts.length})`
+                : `(${casts.length})`}
+            </span>
+          </h1>
           <div className="flex gap-2">
             <Button
               onClick={handleRefresh}
