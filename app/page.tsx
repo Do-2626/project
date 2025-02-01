@@ -127,13 +127,20 @@ export default function Home() {
         </div>
 
         <form onSubmit={addTodo} className="mb-8 space-y-4">
-          <div className="flex gap-2 flex-col-reverse sm:flex-row">
+          <div className="flex gap-2 flex-col ">
             <input
               type="text"
               value={newTodo}
               onChange={(e) => setNewTodo(e.target.value)}
               placeholder="أضف مهمة جديدة..."
               className="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+              dir="rtl"
+            />
+            <textarea
+              value={newDescription}
+              onChange={(e) => setNewDescription(e.target.value)}
+              placeholder="وصف المهمة..."
+              className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary min-h-[80px]"
               dir="rtl"
             />
             <button
@@ -143,13 +150,6 @@ export default function Home() {
               إضافة
             </button>
           </div>
-          <textarea
-            value={newDescription}
-            onChange={(e) => setNewDescription(e.target.value)}
-            placeholder="وصف المهمة..."
-            className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary min-h-[80px]"
-            dir="rtl"
-          />
         </form>
 
         {error && <div className="text-red-500 text-center mb-4">{error}</div>}
