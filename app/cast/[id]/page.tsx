@@ -57,11 +57,33 @@ export default function CastDetails() {
       return;
     }
 
+    // Prompt for password
+    const password = prompt("الرجاء إدخال كلمة المرور للتأكيد");
+    
+    // Check if password is correct (you may want to change this to a more secure password)
+    if (password !== "admin2626") {
+      setError("كلمة المرور غير صحيحة");
+      return;
+    }
+
     try {
-      // هنا يمكنك حذف البيانات المحلية أو إرسال طلب حذف إلى الخادم إذا لزم الأمر
+      const response = await fetch(`/api/cast/${params.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete customer');
+      }
+
+      // Redirect to customers list after successful deletion
       router.push("/cast");
     } catch (error) {
       console.error("Error deleting cast:", error);
+      // Show error message to user
+      setError("فشل في حذف العميل");
     }
   };
 

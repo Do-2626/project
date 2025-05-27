@@ -2,6 +2,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Navbar from "@/components/Navbar";
+import { AuthProvider } from "@/lib/context/AuthContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,10 +21,12 @@ export default function RootLayout({
       <body
         className={`${inter.className} min-h-screen antialiased bg-background`}
       >
-        <Navbar />
-        <main className="container mx-auto my-5 px-4 max-w-5xl">
-          {children}
-        </main>
+        <AuthProvider>
+          <Navbar />
+          <main className="container mx-auto my-5 px-4 max-w-5xl">
+            {children}
+          </main>
+        </AuthProvider>
       </body>
     </html>
   );

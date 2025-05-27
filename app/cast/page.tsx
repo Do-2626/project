@@ -220,7 +220,7 @@ export default function CastForm() {
               <div className="flex flex-col gap-1">
                 <span className="font-medium">{cast.name}</span>
                 <span className="text-sm text-muted-foreground">
-                  {cast.phone ? `0${cast.phone}` : "رقم الهاتف غير متوفر"}
+                  {cast.phone ? `${cast.phone}` : "رقم الهاتف غير متوفر"}
                 </span>
               </div>
               <div className="flex items-center gap-2">

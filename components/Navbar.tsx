@@ -2,16 +2,19 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useAuth } from "@/lib/context/AuthContext";
+import { Button } from "@/components/ui/button";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, logout } = useAuth();
 
   const links = [
     { text: "المهام", href: "/" },
     { text: "العملاء", href: "/cast" },
     { text: "الخريطة", href: "/cast/map" },
-    { text: "الملف الشخصي", href: "/profile" },
-  ];
+    user && { text: "الملف الشخصي", href: "/profile" },
+  ].filter(Boolean) as { text: string; href: string }[];
 
   return (
     <nav className="bg-white shadow-lg">
@@ -25,7 +28,7 @@ export default function Navbar() {
           </div>
 
           {/* Desktop Menu */}
-          <div className="hidden md:flex space-x-8 space-x-reverse">
+          <div className="hidden md:flex space-x-8 space-x-reverse items-center">
             {links.map((link, index) => (
               <Link
                 key={index}
@@ -35,6 +38,32 @@ export default function Navbar() {
                 {link.text}
               </Link>
             ))}
+            
+            {user ? (
+              <div className="flex items-center gap-4">
+                <span className="text-sm font-medium">مرحبًا، {user.name}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => logout()}
+                >
+                  تسجيل الخروج
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link href="/auth/login">
+                  <Button variant="outline" size="sm">
+                    تسجيل الدخول
+                  </Button>
+                </Link>
+                <Link href="/auth/register">
+                  <Button size="sm">
+                    إنشاء حساب
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -83,6 +112,38 @@ export default function Navbar() {
                   {link.text}
                 </Link>
               ))}
+              
+              {user ? (
+                <>
+                  <div className="px-3 py-2 font-medium">مرحبًا، {user.name}</div>
+                  <button
+                    className="block w-full text-right px-3 py-2 rounded-md hover:bg-gray-100"
+                    onClick={() => {
+                      logout();
+                      setIsMenuOpen(false);
+                    }}
+                  >
+                    تسجيل الخروج
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/auth/login"
+                    className="block px-3 py-2 rounded-md hover:bg-gray-100"
+                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  >
+                    تسجيل الدخول
+                  </Link>
+                  <Link
+                    href="/auth/register"
+                    className="block px-3 py-2 rounded-md hover:bg-gray-100"
+                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  >
+                    إنشاء حساب
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         )}
