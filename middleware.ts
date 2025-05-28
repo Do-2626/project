@@ -34,7 +34,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
   
-  // إذا كان المسار عامًا والمستخدم مصادق، إعادة توجيهه إلى الصفحة الرئيسية
+  // إذا كان المسار عامًا والمستخدم مصادق، إعادة توجيهه إلى صفحة المهام
   if (isPublicRoute && isAuthenticated) {
     return NextResponse.redirect(new URL("/", request.url));
   }

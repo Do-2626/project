@@ -36,8 +36,8 @@ export default function LoginPage() {
     
     try {
       await login(formData.email, formData.password);
-      // إعادة التوجيه بعد تسجيل الدخول بنجاح
-      router.push(callbackUrl);
+      // إعادة التوجيه إلى صفحة المهام بعد تسجيل الدخول بنجاح
+      router.push("/");
     } catch (error) {
       // تم التعامل مع الخطأ في سياق المصادقة
       console.error("Login error:", error);
