@@ -17,11 +17,16 @@ export default function CastDetails() {
   const [formData, setFormData] = useState<CastData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showAccountModal, setShowAccountModal] = useState(false);
 
   useEffect(() => {
     const castData = searchParams.get("data");
     if (castData) {
-      const parsedData = JSON.parse(castData) as CastData;
+      let parsedData = JSON.parse(castData) as CastData;
+      // تحويل اسم الحقل من installments إلى installmentCount إذا كان موجودًا
+      if (parsedData.installments && !parsedData.installmentCount) {
+        parsedData.installmentCount = parsedData.installments;
+      }
       setCast(parsedData);
       setFormData(parsedData);
       setIsLoading(false);
@@ -59,7 +64,7 @@ export default function CastDetails() {
 
     // Prompt for password
     const password = prompt("الرجاء إدخال كلمة المرور للتأكيد");
-    
+
     // Check if password is correct (you may want to change this to a more secure password)
     if (password !== "admin2626") {
       setError("كلمة المرور غير صحيحة");
@@ -68,14 +73,14 @@ export default function CastDetails() {
 
     try {
       const response = await fetch(`/api/cast/${params.id}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete customer');
+        throw new Error("Failed to delete customer");
       }
 
       // Redirect to customers list after successful deletion
@@ -103,8 +108,48 @@ export default function CastDetails() {
     );
   }
 
+  const remainingInstallments =
+    Number(formData?.installmentCount) - Number(formData?.next ?? 0);
+
+  console.log("formData", formData);
+
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* نافذة منبثقة بسيطة لعرض كشف الحساب */}
+      {showAccountModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-lg w-full relative animate-fadeIn">
+            <h2 className="text-xl font-bold mb-4 text-center">كشف حساب العميل</h2>
+            <div className="overflow-x-auto">
+              <h3 className="font-semibold mb-2">الأقساط المدفوعة للعميل: {cast?.name}</h3>
+              <table className="w-full border-collapse text-sm">
+                <thead>
+                  <tr>
+                    <th className="border p-2">رقم القسط</th>
+                    <th className="border p-2">المبلغ</th>
+                    <th className="border p-2">التاريخ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.from({ length: cast?.next || 0 }, (_, i) => (
+                    <tr key={i}>
+                      <td className="border p-2">{i + 1}</td>
+                      <td className="border p-2">{cast?.amount}</td>
+                      <td className="border p-2">-</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <button
+              className="mt-6 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded w-full"
+              onClick={() => setShowAccountModal(false)}
+            >
+              إغلاق
+            </button>
+          </div>
+        </div>
+      )}
       <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-md p-6">
         {/* العنوان */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-6">
@@ -328,7 +373,7 @@ export default function CastDetails() {
             <Input
               id="remainingAmount"
               name="remainingAmount"
-              value={formData ? formData.installmentCount - formData.next : 0}
+              value={isNaN(remainingInstallments) ? "" : remainingInstallments}
               onChange={handleInputChange}
               disabled={true}
               className="w-full"
@@ -343,12 +388,40 @@ export default function CastDetails() {
               name="remainingAmount"
               value={
                 formData
-                  ? formData.amount *
-                    (formData.installmentCount - formData.next + 1)
+                  ? Number(formData.amount) *
+                    (Number(formData.installmentCount) -
+                      Number(formData.next) +
+                      1)
                   : 0
               }
               onChange={handleInputChange}
               disabled={true}
+              className="w-full"
+            />
+          </div>
+
+          {/* المنتج */}
+          <div className="space-y-2">
+            <Label htmlFor="product">المنتج</Label>
+            <Input
+              id="product"
+              name="product"
+              value={formData?.product ?? ""}
+              onChange={handleInputChange}
+              disabled={!isEditing}
+              className="w-full"
+            />
+          </div>
+
+          {/* الملاحظات */}
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="notes">الملاحظات</Label>
+            <Input
+              id="notes"
+              name="notes"
+              value={formData?.notes ?? ""}
+              onChange={handleInputChange}
+              disabled={!isEditing}
               className="w-full"
             />
           </div>
@@ -380,48 +453,10 @@ export default function CastDetails() {
               </Button>
               {/* عرض الاقساط السابقة */}
               <Button
-                onClick={() => {
-                  const printWindow = window.open("", "_blank");
-                  if (printWindow) {
-                    printWindow.document.write(`
-                    <html dir="rtl">
-                      <head>
-                        <title>الأقساط السابقة</title>
-                        <style>
-                          body { font-family: Arial, sans-serif; padding: 20px; }
-                          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                          th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
-                          th { background-color: #f2f2f2; }
-                        </style>
-                      </head>
-                      <body>
-                        <h2>الأقساط المدفوعة للعميل: ${cast?.name}</h2>
-                        <table>
-                          <tr>
-                            <th>رقم القسط</th>
-                            <th>المبلغ</th>
-                            <th>التاريخ</th>
-                          </tr>
-                          ${Array.from(
-                            { length: cast?.next || 0 },
-                            (_, i) => `
-                            <tr>
-                              <td>${i + 1}</td>
-                              <td>${cast?.amount}</td>
-                              <td>-</td>
-                            </tr>
-                          `
-                          ).join("")}
-                        </table>
-                      </body>
-                    </html>
-                  `);
-                    printWindow.document.close();
-                  }
-                }}
+                onClick={() => setShowAccountModal(true)}
                 variant="outline"
               >
-                عرض الأقساط السابقة
+                كشف حساب العميل
               </Button>
 
               {/* تعديل */}

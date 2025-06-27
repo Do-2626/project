@@ -93,6 +93,40 @@ export default function CastForm() {
     };
   }, [searchCastValue, searchCast]);
 
+  // دالة لتحويل البيانات إلى CSV
+  function convertToCSV(data: CastData[]) {
+    if (!data.length) return "";
+    const keys = Object.keys(data[0]);
+    const csvRows = [
+      keys.join(","),
+      ...data
+        .map((row) =>
+          keys
+            .map((k) => `"${String(row[k as keyof CastData] ?? "").replace(/"/g, '""')}"`)
+            .join(",")
+        )
+    ];
+    return csvRows.join("\n");
+  }
+
+  // دالة لتحميل ملف CSV مع دعم BOM لظهور العربية بشكل صحيح
+  function downloadCSV() {
+    const dataToExport =
+      searchedCasts.length > 0 || searchCastValue.length > 0
+        ? searchedCasts
+        : casts;
+    const csv = convertToCSV(dataToExport);
+    // إضافة BOM في بداية الملف
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'customers.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="container mx-auto">
       {/* ناف بار ثانوية */}
@@ -117,6 +151,14 @@ export default function CastForm() {
             </span>
           </h1>
           <div className="flex gap-2">
+            {/* زر تصدير العملاء إلى CSV */}
+            <Button
+              onClick={downloadCSV}
+              variant="outline"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md"
+            >
+              تصدير CSV
+            </Button>
             {/* زر تحديث */}
             <Button
               onClick={handleRefresh}

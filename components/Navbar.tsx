@@ -13,6 +13,7 @@ export default function Navbar() {
     { text: "المهام", href: "/" },
     { text: "العملاء", href: "/cast" },
     { text: "الخريطة", href: "/cast/map" },
+    { text: "تحصيل الأقساط", href: "/cast/installment-collection" },
     user && { text: "الملف الشخصي", href: "/profile" },
   ].filter(Boolean) as { text: string; href: string }[];
 

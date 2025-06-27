@@ -91,6 +91,7 @@ export default function AddCastPage() {
           longitude: position.coords.longitude,
         };
 
+        console.log(submissionData, "submissionData");
         await submitFormData(submissionData);
       } catch (error) {
         console.error("Error:", error);

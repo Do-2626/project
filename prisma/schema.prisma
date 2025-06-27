@@ -79,7 +79,6 @@ model Cast {
   otherProducts           String?   @default("")
   advance                 Int?
   amount                  Int?
-  installments            Int?
   product                 String?
   area                    String?
   notes                   String?   @default("")
@@ -101,4 +100,27 @@ model Cast {
   
   // Relations
   workspace               Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  installments            Installment[]
+}
+
+model Installment {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  castId        String   @db.ObjectId
+  dueDate       DateTime
+  amount        Int
+  number        Int      // رقم القسط
+  status        InstallmentStatus @default(DUE)
+  paidAt        DateTime?
+  postponed     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  cast          Cast     @relation(fields: [castId], references: [id], onDelete: Cascade)
+}
+
+enum InstallmentStatus {
+  DUE      // مستحق
+  PAID     // تم التحصيل
+  POSTPONED // مؤجل
 }
