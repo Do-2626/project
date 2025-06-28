@@ -16,12 +16,10 @@ export async function GET() {
 // واجهة برمجية لإضافة مهمة جديدة
 // POST /api/cast
 export async function POST(request: NextRequest) {
-  console.log("[API/cast] POST called");
   await connectDB();
   const body = await request.json();
   const newCast = new Cast(body);
   await newCast.save();
-  console.log("[API/cast] newCast._id:", newCast._id, "typeof:", typeof newCast._id);
 
   // توليد الأقساط تلقائياً
   try {
@@ -48,7 +46,6 @@ export async function POST(request: NextRequest) {
       for (let i = 0; i < installments; i++) {
         const dueDate = new Date(firstDueDate);
         dueDate.setMonth(dueDate.getMonth() + i);
-        console.log("[API/cast] Creating installment (mongoose):", { castId, dueDate, amount, number: i + 1 });
         await Installment.create({
           castId: castId,
           dueDate: dueDate,

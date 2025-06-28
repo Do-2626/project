@@ -40,6 +40,25 @@ export default function CastDetails() {
     const { name, value } = e.target;
     setFormData((prev) => {
       if (!prev) return null;
+      // إذا كان الحقل رقميًا، تأكد من التحويل الصحيح وتجنب NaN
+      if (
+        [
+          "k",
+          "t",
+          "advance",
+          "amount",
+          "installmentCount",
+          "longitude",
+          "latitude",
+          "next",
+        ].includes(name)
+      ) {
+        const num = Number(value);
+        return {
+          ...prev,
+          [name]: value === "" ? undefined : isNaN(num) ? undefined : num,
+        } as CastData;
+      }
       return {
         ...prev,
         [name]: value,
@@ -111,17 +130,19 @@ export default function CastDetails() {
   const remainingInstallments =
     Number(formData?.installmentCount) - Number(formData?.next ?? 0);
 
-  console.log("formData", formData);
-
   return (
     <div className="container mx-auto px-4 py-8">
       {/* نافذة منبثقة بسيطة لعرض كشف الحساب */}
       {showAccountModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-lg shadow-lg p-6 max-w-lg w-full relative animate-fadeIn">
-            <h2 className="text-xl font-bold mb-4 text-center">كشف حساب العميل</h2>
+            <h2 className="text-xl font-bold mb-4 text-center">
+              كشف حساب العميل
+            </h2>
             <div className="overflow-x-auto">
-              <h3 className="font-semibold mb-2">الأقساط المدفوعة للعميل: {cast?.name}</h3>
+              <h3 className="font-semibold mb-2">
+                الأقساط المدفوعة للعميل: {cast?.name}
+              </h3>
               <table className="w-full border-collapse text-sm">
                 <thead>
                   <tr>
@@ -226,7 +247,11 @@ export default function CastDetails() {
             <Input
               id="k"
               name="k"
-              value={formData?.k ?? ""}
+              value={
+                formData?.k === undefined || isNaN(Number(formData?.k))
+                  ? ""
+                  : formData?.k
+              }
               onChange={handleInputChange}
               disabled={!isEditing}
               className="w-full"
@@ -239,7 +264,11 @@ export default function CastDetails() {
             <Input
               id="t"
               name="t"
-              value={formData?.t ?? ""}
+              value={
+                formData?.t === undefined || isNaN(Number(formData?.t))
+                  ? ""
+                  : formData?.t
+              }
               onChange={handleInputChange}
               disabled={!isEditing}
               className="w-full"
@@ -267,7 +296,12 @@ export default function CastDetails() {
               <Input
                 id="advance"
                 name="advance"
-                value={formData?.advance ?? ""}
+                value={
+                  formData?.advance === undefined ||
+                  isNaN(Number(formData?.advance))
+                    ? ""
+                    : formData?.advance
+                }
                 onChange={handleInputChange}
                 disabled={!isEditing}
                 className="w-full"
@@ -280,7 +314,12 @@ export default function CastDetails() {
               <Input
                 id="amount"
                 name="amount"
-                value={formData?.amount ?? ""}
+                value={
+                  formData?.amount === undefined ||
+                  isNaN(Number(formData?.amount))
+                    ? ""
+                    : formData?.amount
+                }
                 onChange={handleInputChange}
                 disabled={!isEditing}
                 className="w-full"
@@ -293,7 +332,12 @@ export default function CastDetails() {
               <Input
                 id="installmentCount"
                 name="installmentCount"
-                value={formData?.installmentCount ?? ""}
+                value={
+                  formData?.installmentCount === undefined ||
+                  isNaN(Number(formData?.installmentCount))
+                    ? ""
+                    : formData?.installmentCount
+                }
                 onChange={handleInputChange}
                 disabled={!isEditing}
                 className="w-full"
@@ -310,7 +354,12 @@ export default function CastDetails() {
                 <Input
                   id="longitude"
                   name="longitude"
-                  value={formData?.longitude ?? ""}
+                  value={
+                    formData?.longitude === undefined ||
+                    isNaN(Number(formData?.longitude))
+                      ? ""
+                      : formData?.longitude
+                  }
                   onChange={handleInputChange}
                   disabled={true}
                   className="w-full"
@@ -322,7 +371,12 @@ export default function CastDetails() {
                 <Input
                   id="latitude"
                   name="latitude"
-                  value={formData?.latitude ?? ""}
+                  value={
+                    formData?.latitude === undefined ||
+                    isNaN(Number(formData?.latitude))
+                      ? ""
+                      : formData?.latitude
+                  }
                   onChange={handleInputChange}
                   disabled={true}
                   className="w-full"
@@ -360,7 +414,11 @@ export default function CastDetails() {
             <Input
               id="nextInstallment"
               name="nextInstallment"
-              value={formData?.next ?? ""}
+              value={
+                formData?.next === undefined || isNaN(Number(formData?.next))
+                  ? ""
+                  : formData?.next
+              }
               onChange={handleInputChange}
               disabled={true}
               className="w-full"
@@ -373,7 +431,9 @@ export default function CastDetails() {
             <Input
               id="remainingAmount"
               name="remainingAmount"
-              value={isNaN(remainingInstallments) ? "" : remainingInstallments}
+              value={
+                isNaN(remainingInstallments) ? "" : remainingInstallments
+              }
               onChange={handleInputChange}
               disabled={true}
               className="w-full"
@@ -387,12 +447,9 @@ export default function CastDetails() {
               id="remainingAmount"
               name="remainingAmount"
               value={
-                formData
-                  ? Number(formData.amount) *
-                    (Number(formData.installmentCount) -
-                      Number(formData.next) +
-                      1)
-                  : 0
+                formData && !isNaN(Number(formData.amount)) && !isNaN(Number(formData.installmentCount)) && !isNaN(Number(formData.next))
+                  ? Number(formData.amount) * (Number(formData.installmentCount) - Number(formData.next) + 1)
+                  : ""
               }
               onChange={handleInputChange}
               disabled={true}

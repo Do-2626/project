@@ -8,17 +8,23 @@ export interface IInstallment extends Document {
   status: string;
   postponed?: boolean;
   paidAt?: Date | null;
+  // snapshot لاسم العميل وقت إنشاء القسط (اختياري)
+  castName?: string;
 }
 
-const InstallmentSchema = new Schema<IInstallment>({
-  castId: { type: String, required: true, ref: "Cast" },
-  dueDate: { type: Date, required: true },
-  amount: { type: Number, required: true },
-  number: { type: Number, required: true },
-  status: { type: String, required: true, default: "DUE" },
-  postponed: { type: Boolean, default: false },
-  paidAt: { type: Date, default: null },
-});
+const InstallmentSchema = new Schema<IInstallment>(
+  {
+    castId: { type: String, required: true, ref: "Cast", index: true },
+    dueDate: { type: Date, required: true, index: true },
+    amount: { type: Number, required: true, min: 1 },
+    number: { type: Number, required: true, min: 1 },
+    status: { type: String, required: true, default: "DUE", index: true },
+    postponed: { type: Boolean, default: false },
+    paidAt: { type: Date, default: null },
+    castName: { type: String }, // snapshot اختياري
+  },
+  { timestamps: true }
+);
 
 export const Installment =
   mongoose.models.Installment || mongoose.model<IInstallment>("Installment", InstallmentSchema);

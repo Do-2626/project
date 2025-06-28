@@ -47,7 +47,6 @@ export async function GET() {
       },
     });
   } catch (err) {
-    console.error("[API/installment] GET error (mongoose):", err);
     return NextResponse.json(
       {
         installments: [],

@@ -14,6 +14,7 @@ const userSchema = new Schema({
     trim: true,
     lowercase: true,
     match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'الرجاء إدخال بريد إلكتروني صحيح'],
+    index: true,
   },
   password: {
     type: String,
@@ -25,10 +26,12 @@ const userSchema = new Schema({
     type: String,
     enum: ['user', 'admin'],
     default: 'user',
+    index: true,
   },
   createdAt: {
     type: Date,
     default: Date.now,
+    index: true,
   },
 });
 
