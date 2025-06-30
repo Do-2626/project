@@ -17,6 +17,7 @@ interface AuthContextType {
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
+  refreshToken: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,17 +27,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const clearError = () => setError(null);
+
+  // وظيفة لتحديث التوكن
+  const refreshToken = async () => {
+    try {
+      const res = await fetch("/api/auth/refresh-token", {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        throw new Error("فشل تحديث التوكن");
+      }
+
+      // تحديث معلومات المستخدم بعد تحديث التوكن
+      const meRes = await fetch("/api/auth/me", { credentials: "include" });
+      const meData = await meRes.json();
+
+      if (meRes.ok) {
+        setUser(meData.user);
+      }
+    } catch (error) {
+      console.error("Error refreshing token:", error);
+      setUser(null);
+    }
+  };
+
   // التحقق من حالة المصادقة عند تحميل التطبيق
   useEffect(() => {
     const checkUserLoggedIn = async () => {
       try {
-        const res = await fetch("/api/auth/me");
+        const res = await fetch("/api/auth/me", { credentials: "include" });
         const data = await res.json();
 
         if (res.ok) {
           setUser(data.user);
-        } else {
-          setUser(null);
+        } else if (res.status === 401) {
+          // محاولة تحديث التوكن إذا كان التوكن الحالي منتهي الصلاحية
+          await refreshToken();
         }
       } catch (error) {
         console.error("Error checking authentication status:", error);
@@ -47,6 +76,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     checkUserLoggedIn();
+
+    // إعداد مؤقت لتحديث التوكن كل 6 أيام
+    const refreshInterval = setInterval(refreshToken, 6 * 24 * 60 * 60 * 1000);
+
+    return () => clearInterval(refreshInterval);
   }, []);
 
   // تسجيل الدخول
@@ -61,12 +95,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ email, password }),
+        credentials: "include",
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || "فشل تسجيل الدخول");
+        throw new Error(data.error || data.errors?.email || data.errors?.password || "فشل تسجيل الدخول");
       }
 
       setUser(data.user);
@@ -90,6 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ name, email, password }),
+        credentials: "include",
       });
 
       const data = await res.json();
@@ -98,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(data.error || "فشل التسجيل");
       }
 
-      // بعد التسجيل الناجح، قم بتسجيل الدخول تلقائيًا
+      // تسجيل الدخول مباشرة بعد التسجيل
       await login(email, password);
     } catch (error: any) {
       setError(error.message);
@@ -111,28 +147,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // تسجيل الخروج
   const logout = async () => {
     try {
-      setLoading(true);
-      setError(null);
-
-      const res = await fetch("/api/auth/logout");
+      const res = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
 
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "فشل تسجيل الخروج");
+        throw new Error("فشل تسجيل الخروج");
       }
 
       setUser(null);
     } catch (error: any) {
-      setError(error.message);
       console.error("Logout error:", error);
-    } finally {
-      setLoading(false);
     }
-  };
-
-  // مسح الأخطاء
-  const clearError = () => {
-    setError(null);
   };
 
   return (
@@ -145,6 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         register,
         logout,
         clearError,
+        refreshToken,
       }}
     >
       {children}
@@ -152,7 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// هوك مخصص لاستخدام سياق المصادقة
+// Hook لاستخدام سياق المصادقة
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {

@@ -3,10 +3,20 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import type { CastData } from "@/lib/types";
 import { useParams, useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+
+// نوع بيانات القسط
+interface Payment {
+  id?: string;
+  castId: string;
+  number: number;
+  amount: number;
+  date: string;
+}
 
 export default function CastDetails() {
   const params = useParams();
@@ -18,6 +28,8 @@ export default function CastDetails() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAccountModal, setShowAccountModal] = useState(false);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [isPaying, setIsPaying] = useState(false);
 
   useEffect(() => {
     const castData = searchParams.get("data");
@@ -35,6 +47,21 @@ export default function CastDetails() {
       setIsLoading(false);
     }
   }, [searchParams]);
+
+  // جلب الأقساط من API
+  useEffect(() => {
+    if (!cast?._id) return;
+    const fetchPayments = async () => {
+      try {
+        const res = await fetch(`/api/payments?castId=${cast._id}`);
+        const data = await res.json();
+        if (data.success) setPayments(data.data);
+      } catch (e) {
+        setError("تعذر تحميل الأقساط");
+      }
+    };
+    fetchPayments();
+  }, [cast?._id]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -66,13 +93,49 @@ export default function CastDetails() {
     });
   };
 
+  const handleEdit = () => {
+    if (cast) {
+      setFormData({ ...cast }); // نسخ البيانات لتجنب تعديل الحالة الأصلية مباشرة
+    }
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setFormData(cast ? { ...cast } : null); // إعادة تعيين البيانات عند الإلغاء
+    setIsEditing(false);
+  };
+
   const handleSave = async () => {
     try {
-      // هنا يمكنك تحديث البيانات المحلية أو إرسالها إلى الخادم إذا لزم الأمر
-      setCast(formData);
+      if (!formData) {
+        console.log("[handleSave] لا يوجد بيانات formData");
+        return;
+      }
+      // تأكد من إرسال الحقول المتوافقة مع قاعدة البيانات
+      const payload = {
+        ...formData,
+        installments: formData.installmentCount ?? formData.installments,
+      };
+      console.log("[handleSave] payload to send:", payload);
+      const response = await fetch(`/api/cast/${params.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      console.log("[handleSave] response.ok:", response.ok);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log("[handleSave] response error text:", errorText);
+        throw new Error("فشل في حفظ البيانات");
+      }
+      const updated = await response.json();
+      console.log("[handleSave] updated from server:", updated);
+      setCast(updated);
+      setFormData({ ...updated }); // تحديث formData أيضًا
       setIsEditing(false);
-    } catch (error) {
-      console.error("Error updating cast:", error);
+    } catch (err) {
+      console.log("[handleSave] catch error:", err);
+      setError("حدث خطأ أثناء الحفظ");
     }
   };
 
@@ -111,6 +174,49 @@ export default function CastDetails() {
     }
   };
 
+  // حساب الأقساط المدفوعة والمتبقية
+  const paidCount = payments.length;
+  const remainingInstallments =
+    Number(formData?.installmentCount ?? 0) - paidCount;
+  const nextInstallmentNumber = paidCount + 1;
+
+  // تحصيل القسط التالي
+  const handlePayInstallment = async () => {
+    if (!cast?._id || !formData?.amount) return;
+    if (paidCount >= Number(formData.installmentCount)) {
+      setError("تم دفع جميع الأقساط");
+      return;
+    }
+    setIsPaying(true);
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      // منع تكرار الدفع في نفس اليوم
+      if (payments.some((p) => p.date === today)) {
+        setError("تم دفع قسط اليوم بالفعل");
+        setIsPaying(false);
+        return;
+      }
+      const res = await fetch("/api/payments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          castId: cast._id,
+          number: nextInstallmentNumber,
+          amount: formData.amount,
+          date: today,
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || "فشل التحصيل");
+      setPayments((prev) => [...prev, data.data]);
+      setError(null);
+    } catch (e: any) {
+      setError(e.message || "فشل التحصيل");
+    } finally {
+      setIsPaying(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -127,11 +233,375 @@ export default function CastDetails() {
     );
   }
 
-  const remainingInstallments =
-    Number(formData?.installmentCount) - Number(formData?.next ?? 0);
-
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* رأس الصفحة مع صورة أو أيقونة */}
+      <div className="flex flex-col md:flex-row items-center gap-6 mb-8">
+        <div className="flex-shrink-0">
+          <div className="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center text-4xl text-blue-600 shadow-md">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="w-16 h-16"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118A7.5 7.5 0 0112 15.75a7.5 7.5 0 017.5 4.368"
+              />
+            </svg>
+          </div>
+        </div>
+        <div className="flex-1 text-center md:text-right">
+          <h1 className="text-3xl font-bold mb-1 flex items-center justify-center md:justify-end gap-2">
+            <span>تفاصيل العميل</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-7 w-7 text-blue-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+            </svg>
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            {formData?.name ?? "-"}
+          </p>
+          <p className="text-gray-500 text-sm mt-1">
+            رقم الهاتف: {formData?.phone ?? "-"}
+          </p>
+        </div>
+      </div>
+
+      {/* إشعار تحديث الموقع الجغرافي */}
+      {(!formData?.latitude || !formData?.longitude) && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertTitle>الموقع الجغرافي غير متوفر</AlertTitle>
+          <AlertDescription>
+            لم يتم تسجيل الموقع الجغرافي لهذا العميل. يرجى الضغط على زر "تحديث
+            الموقع" لإضافة الموقع الحالي.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        {/* بيانات أساسية */}
+        <div className="bg-white rounded-xl shadow p-6 space-y-4 border border-gray-100">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-blue-600">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            بيانات العميل
+          </h2>
+          <div className="grid grid-cols-1 gap-3">
+            <div>
+              <span className="font-medium">العنوان:</span>
+              {isEditing ? (
+                <Input
+                  name="area"
+                  value={formData?.area ?? ""}
+                  onChange={handleInputChange}
+                  className="mt-1"
+                />
+              ) : (
+                <span className="ml-2">{formData?.area ?? "-"}</span>
+              )}
+            </div>
+            <div>
+              <span className="font-medium">عدد الكراسي:</span>
+              {isEditing ? (
+                <Input
+                  name="k"
+                  value={formData?.k ?? ""}
+                  onChange={handleInputChange}
+                  className="mt-1"
+                />
+              ) : (
+                <span className="ml-2">{formData?.k ?? "-"}</span>
+              )}
+            </div>
+            <div>
+              <span className="font-medium">عدد الترابيزات:</span>
+              {isEditing ? (
+                <Input
+                  name="t"
+                  value={formData?.t ?? ""}
+                  onChange={handleInputChange}
+                  className="mt-1"
+                />
+              ) : (
+                <span className="ml-2">{formData?.t ?? "-"}</span>
+              )}
+            </div>
+            <div>
+              <span className="font-medium">تاريخ البداية:</span>
+              {isEditing ? (
+                <Input
+                  name="date"
+                  type="date"
+                  value={formData?.date ?? ""}
+                  onChange={handleInputChange}
+                  className="mt-1"
+                />
+              ) : (
+                <span className="ml-2">{formData?.date ?? "-"}</span>
+              )}
+            </div>
+            <div>
+              <span className="font-medium">المنتج:</span>
+              {isEditing ? (
+                <Input
+                  name="product"
+                  value={formData?.product ?? ""}
+                  onChange={handleInputChange}
+                  className="mt-1"
+                />
+              ) : (
+                <span className="ml-2">{formData?.product ?? "-"}</span>
+              )}
+            </div>
+            <div>
+              <span className="font-medium">ملاحظات:</span>
+              {isEditing ? (
+                <Input
+                  name="notes"
+                  value={formData?.notes ?? ""}
+                  onChange={handleInputChange}
+                  className="mt-1"
+                />
+              ) : (
+                <span className="ml-2">
+                  {formData?.notes || (
+                    <span className="text-gray-400">لا يوجد</span>
+                  )}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+        {/* بيانات مالية */}
+        <div className="bg-white rounded-xl shadow p-6 space-y-4 border border-gray-100">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-green-600">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 0V4m0 16v-4"
+              />
+            </svg>
+            بيانات الأقساط
+          </h2>
+          <div className="grid grid-cols-1 gap-3">
+            <div>
+              <span className="font-medium">المقدم:</span>
+              {isEditing ? (
+                <Input
+                  name="advance"
+                  value={formData?.advance ?? ""}
+                  onChange={handleInputChange}
+                  className="mt-1"
+                />
+              ) : (
+                <span className="ml-2">{formData?.advance ?? "-"}</span>
+              )}
+            </div>
+            <div>
+              <span className="font-medium">المبلغ:</span>
+              {isEditing ? (
+                <Input
+                  name="amount"
+                  value={formData?.amount ?? ""}
+                  onChange={handleInputChange}
+                  className="mt-1"
+                />
+              ) : (
+                <span className="ml-2">{formData?.amount ?? "-"}</span>
+              )}
+            </div>
+            <div>
+              <span className="font-medium">عدد الأقساط:</span>
+              {isEditing ? (
+                <Input
+                  name="installmentCount"
+                  value={formData?.installmentCount ?? ""}
+                  onChange={handleInputChange}
+                  className="mt-1"
+                />
+              ) : (
+                <span className="ml-2">
+                  {formData?.installmentCount ?? "-"}
+                </span>
+              )}
+            </div>
+            <div>
+              <span className="font-medium">القسط التالي:</span>
+              <span className="ml-2">{formData?.next ?? "-"}</span>
+            </div>
+            <div>
+              <span className="font-medium">عدد الأقساط المتبقية:</span>
+              <span className="ml-2">
+                {isNaN(remainingInstallments) ? "-" : remainingInstallments}
+              </span>
+            </div>
+            <div>
+              <span className="font-medium">مجموع المبلغ المتبقي:</span>
+              <span className="ml-2">
+                {formData &&
+                !isNaN(Number(formData.amount)) &&
+                !isNaN(Number(formData.installmentCount)) &&
+                !isNaN(Number(formData.next))
+                  ? Number(formData.amount) *
+                    (Number(formData.installmentCount) -
+                      Number(formData.next) +
+                      1)
+                  : "-"}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* الموقع الجغرافي */}
+      <div className="bg-white rounded-xl shadow p-6 mb-8 border border-gray-100">
+        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-purple-600">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 11c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm0 0c-4.418 0-8 2.239-8 5v2h16v-2c0-2.761-3.582-5-8-5z"
+            />
+          </svg>
+          الموقع الجغرافي
+        </h2>
+        <div className="flex flex-col md:flex-row gap-4 items-center">
+          <div className="flex-1 flex flex-col md:flex-row gap-4">
+            <Input
+              id="longitude"
+              name="longitude"
+              value={
+                formData?.longitude === undefined ||
+                isNaN(Number(formData?.longitude))
+                  ? ""
+                  : formData?.longitude
+              }
+              onChange={handleInputChange}
+              disabled={true}
+              className="w-full"
+              placeholder="خط الطول"
+            />
+            <Input
+              id="latitude"
+              name="latitude"
+              value={
+                formData?.latitude === undefined ||
+                isNaN(Number(formData?.latitude))
+                  ? ""
+                  : formData?.latitude
+              }
+              onChange={handleInputChange}
+              disabled={true}
+              className="w-full"
+              placeholder="خط العرض"
+            />
+          </div>
+          <div className="flex items-end">
+            <Button
+              onClick={() => {
+                if ("geolocation" in navigator) {
+                  navigator.geolocation.getCurrentPosition((position) => {
+                    setFormData((prev) => {
+                      if (!prev) return null;
+                      return {
+                        ...prev,
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                      };
+                    });
+                  });
+                }
+              }}
+              type="button"
+              disabled={!isEditing}
+              variant="outline"
+            >
+              تحديث الموقع
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* الإجراءات */}
+      <div className="flex flex-wrap gap-4 justify-end mb-8">
+        {isEditing ? (
+          <>
+            <Button onClick={handleCancelEdit} variant="outline">
+              إلغاء
+            </Button>
+            <Button
+              onClick={handleSave}
+              className="bg-green-500 hover:bg-green-600"
+            >
+              حفظ
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button
+              onClick={handlePayInstallment}
+              className="bg-blue-500 hover:bg-blue-600 text-white"
+              disabled={
+                isPaying || paidCount >= Number(formData?.installmentCount)
+              }
+            >
+              {isPaying ? "جاري التحصيل..." : "تحصيل القسط التالى"}
+            </Button>
+            <Button onClick={() => setShowAccountModal(true)} variant="outline">
+              كشف حساب العميل
+            </Button>
+            <Button onClick={handleEdit} variant="secondary">
+              تعديل
+            </Button>
+            <Button onClick={handleDelete} variant="destructive">
+              حذف
+            </Button>
+          </>
+        )}
+      </div>
+
       {/* نافذة منبثقة بسيطة لعرض كشف الحساب */}
       {showAccountModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -152,13 +622,23 @@ export default function CastDetails() {
                   </tr>
                 </thead>
                 <tbody>
-                  {Array.from({ length: cast?.next || 0 }, (_, i) => (
-                    <tr key={i}>
-                      <td className="border p-2">{i + 1}</td>
-                      <td className="border p-2">{cast?.amount}</td>
-                      <td className="border p-2">-</td>
+                  {payments.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="text-center p-2">
+                        لا يوجد أقساط مدفوعة
+                      </td>
                     </tr>
-                  ))}
+                  ) : (
+                    payments
+                      .sort((a, b) => a.number - b.number)
+                      .map((p) => (
+                        <tr key={p.number}>
+                          <td className="border p-2">{p.number}</td>
+                          <td className="border p-2">{p.amount}</td>
+                          <td className="border p-2">{p.date}</td>
+                        </tr>
+                      ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -171,364 +651,6 @@ export default function CastDetails() {
           </div>
         </div>
       )}
-      <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-md p-6">
-        {/* العنوان */}
-        <div className="flex flex-col md:flex-row justify-between items-center mb-6">
-          <div className="text-center md:text-left mb-4 md:mb-0">
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-              تفاصيل العميل
-            </h1>
-            <p className="text-muted-foreground">عرض وتعديل بيانات العميل</p>
-          </div>
-          <button
-            onClick={() => router.back()}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
-          >
-            رجوع
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L4.414 9H17a1 1 0 110 2H4.414l5.293 5.293a1 1 0 010 1.414z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </button>
-        </div>
-
-        {/* البيانات */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* الاسم */}
-          <div className="space-y-2">
-            <Label htmlFor="name">الاسم</Label>
-            <Input
-              id="name"
-              name="name"
-              value={formData?.name ?? ""}
-              onChange={handleInputChange}
-              disabled={!isEditing}
-              className="w-full"
-            />
-          </div>
-
-          {/* رقم الهاتف */}
-          <div className="space-y-2">
-            <Label htmlFor="phone">رقم الهاتف</Label>
-            <Input
-              id="phone"
-              name="phone"
-              value={formData?.phone ?? ""}
-              onChange={handleInputChange}
-              disabled={!isEditing}
-              className="w-full"
-            />
-          </div>
-
-          {/* العنوان */}
-          <div className="space-y-2">
-            <Label htmlFor="address">العنوان</Label>
-            <Input
-              id="address"
-              name="area"
-              value={formData?.area ?? ""}
-              onChange={handleInputChange}
-              disabled={!isEditing}
-              className="w-full"
-            />
-          </div>
-
-          {/* عدد الكراسى */}
-          <div className="space-y-2">
-            <Label htmlFor="k">عدد الكراسى</Label>
-            <Input
-              id="k"
-              name="k"
-              value={
-                formData?.k === undefined || isNaN(Number(formData?.k))
-                  ? ""
-                  : formData?.k
-              }
-              onChange={handleInputChange}
-              disabled={!isEditing}
-              className="w-full"
-            />
-          </div>
-
-          {/* عدد الترابيزات */}
-          <div className="space-y-2">
-            <Label htmlFor="t">عدد الترابيزات</Label>
-            <Input
-              id="t"
-              name="t"
-              value={
-                formData?.t === undefined || isNaN(Number(formData?.t))
-                  ? ""
-                  : formData?.t
-              }
-              onChange={handleInputChange}
-              disabled={!isEditing}
-              className="w-full"
-            />
-          </div>
-
-          {/* تاريخ البيع */}
-          <div className="space-y-2">
-            <Label htmlFor="date">تاريخ البداية</Label>
-            <Input
-              id="date"
-              name="date"
-              value={formData?.date ?? ""}
-              onChange={handleInputChange}
-              disabled={true}
-              className="w-full"
-            />
-          </div>
-
-          {/* معلومات الدفع */}
-          <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* المقدم */}
-            <div className="space-y-2">
-              <Label htmlFor="advance">المقدم</Label>
-              <Input
-                id="advance"
-                name="advance"
-                value={
-                  formData?.advance === undefined ||
-                  isNaN(Number(formData?.advance))
-                    ? ""
-                    : formData?.advance
-                }
-                onChange={handleInputChange}
-                disabled={!isEditing}
-                className="w-full"
-              />
-            </div>
-
-            {/* المبلغ */}
-            <div className="space-y-2">
-              <Label htmlFor="amount">المبلغ</Label>
-              <Input
-                id="amount"
-                name="amount"
-                value={
-                  formData?.amount === undefined ||
-                  isNaN(Number(formData?.amount))
-                    ? ""
-                    : formData?.amount
-                }
-                onChange={handleInputChange}
-                disabled={!isEditing}
-                className="w-full"
-              />
-            </div>
-
-            {/* عدد الاقساط */}
-            <div className="space-y-2">
-              <Label htmlFor="installmentCount">عدد الاقساط</Label>
-              <Input
-                id="installmentCount"
-                name="installmentCount"
-                value={
-                  formData?.installmentCount === undefined ||
-                  isNaN(Number(formData?.installmentCount))
-                    ? ""
-                    : formData?.installmentCount
-                }
-                onChange={handleInputChange}
-                disabled={!isEditing}
-                className="w-full"
-              />
-            </div>
-          </div>
-
-          {/* الموقع الجغرافى */}
-          <div className="col-span-1 md:col-span-2 space-y-2">
-            <Label>الموقع الجغرافى</Label>
-            <div className="flex flex-col md:flex-row gap-4">
-              {/* خط الطول */}
-              <div className="flex-1">
-                <Input
-                  id="longitude"
-                  name="longitude"
-                  value={
-                    formData?.longitude === undefined ||
-                    isNaN(Number(formData?.longitude))
-                      ? ""
-                      : formData?.longitude
-                  }
-                  onChange={handleInputChange}
-                  disabled={true}
-                  className="w-full"
-                />
-              </div>
-
-              {/* خط العرض */}
-              <div className="flex-1">
-                <Input
-                  id="latitude"
-                  name="latitude"
-                  value={
-                    formData?.latitude === undefined ||
-                    isNaN(Number(formData?.latitude))
-                      ? ""
-                      : formData?.latitude
-                  }
-                  onChange={handleInputChange}
-                  disabled={true}
-                  className="w-full"
-                />
-              </div>
-              <div className="flex items-end">
-                <Button
-                  onClick={() => {
-                    if ("geolocation" in navigator) {
-                      navigator.geolocation.getCurrentPosition((position) => {
-                        setFormData((prev) => {
-                          if (!prev) return null;
-                          return {
-                            ...prev,
-                            latitude: position.coords.latitude,
-                            longitude: position.coords.longitude,
-                          };
-                        });
-                      });
-                    }
-                  }}
-                  type="button"
-                  disabled={!isEditing}
-                  variant="outline"
-                >
-                  تحديث الموقع
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* القسط التالى */}
-          <div className="space-y-2">
-            <Label htmlFor="nextInstallment">القسط التالى</Label>
-            <Input
-              id="nextInstallment"
-              name="nextInstallment"
-              value={
-                formData?.next === undefined || isNaN(Number(formData?.next))
-                  ? ""
-                  : formData?.next
-              }
-              onChange={handleInputChange}
-              disabled={true}
-              className="w-full"
-            />
-          </div>
-
-          {/* مجموع الاقساط المتبقية */}
-          <div className="space-y-2">
-            <Label htmlFor="remainingAmount">عدد الاقساط المتبقية</Label>
-            <Input
-              id="remainingAmount"
-              name="remainingAmount"
-              value={
-                isNaN(remainingInstallments) ? "" : remainingInstallments
-              }
-              onChange={handleInputChange}
-              disabled={true}
-              className="w-full"
-            />
-          </div>
-
-          {/* مجموع المبلغ المتبقى */}
-          <div className="space-y-2">
-            <Label htmlFor="remainingAmount">مجموع المبلغ المتبقى</Label>
-            <Input
-              id="remainingAmount"
-              name="remainingAmount"
-              value={
-                formData && !isNaN(Number(formData.amount)) && !isNaN(Number(formData.installmentCount)) && !isNaN(Number(formData.next))
-                  ? Number(formData.amount) * (Number(formData.installmentCount) - Number(formData.next) + 1)
-                  : ""
-              }
-              onChange={handleInputChange}
-              disabled={true}
-              className="w-full"
-            />
-          </div>
-
-          {/* المنتج */}
-          <div className="space-y-2">
-            <Label htmlFor="product">المنتج</Label>
-            <Input
-              id="product"
-              name="product"
-              value={formData?.product ?? ""}
-              onChange={handleInputChange}
-              disabled={!isEditing}
-              className="w-full"
-            />
-          </div>
-
-          {/* الملاحظات */}
-          <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="notes">الملاحظات</Label>
-            <Input
-              id="notes"
-              name="notes"
-              value={formData?.notes ?? ""}
-              onChange={handleInputChange}
-              disabled={!isEditing}
-              className="w-full"
-            />
-          </div>
-        </div>
-
-        {/* الاجراءات */}
-        <div className="flex flex-col md:flex-row justify-end gap-4 mt-8">
-          {isEditing ? (
-            <>
-              <Button onClick={() => setIsEditing(false)} variant="outline">
-                إلغاء
-              </Button>
-              <Button
-                onClick={handleSave}
-                className="bg-green-500 hover:bg-green-600"
-              >
-                حفظ
-              </Button>
-            </>
-          ) : (
-            <>
-              {/* اصدار ايصال بالقسط التالى */}
-              <Button
-                onClick={() => {
-                  router.push(`/cast/receipt/${params.id}`);
-                }}
-              >
-                اصدار ايصال بالقسط التالى
-              </Button>
-              {/* عرض الاقساط السابقة */}
-              <Button
-                onClick={() => setShowAccountModal(true)}
-                variant="outline"
-              >
-                كشف حساب العميل
-              </Button>
-
-              {/* تعديل */}
-              <Button onClick={() => setIsEditing(true)} variant="outline">
-                تعديل
-              </Button>
-
-              {/* حذف */}
-              <Button onClick={handleDelete} variant="destructive">
-                حذف
-              </Button>
-            </>
-          )}
-        </div>
-      </div>
     </div>
   );
 }

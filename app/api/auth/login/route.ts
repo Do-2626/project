@@ -4,6 +4,28 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
+// وظيفة للتحقق من صحة المدخلات
+function validateLoginInput(email: string, password: string) {
+  const errors: { email?: string; password?: string } = {};
+
+  if (!email) {
+    errors.email = "البريد الإلكتروني مطلوب";
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errors.email = "البريد الإلكتروني غير صالح";
+  }
+
+  if (!password) {
+    errors.password = "كلمة المرور مطلوبة";
+  } else if (password.length < 6) {
+    errors.password = "كلمة المرور يجب أن تكون 6 أحرف على الأقل";
+  }
+
+  return {
+    isValid: Object.keys(errors).length === 0,
+    errors,
+  };
+}
+
 // واجهة برمجية لتسجيل الدخول
 // POST /api/auth/login
 export async function POST(request: NextRequest) {
@@ -13,6 +35,15 @@ export async function POST(request: NextRequest) {
     // استخراج بيانات المستخدم من الطلب
     const { email, password } = await request.json();
     
+    // التحقق من صحة المدخلات
+    const { isValid, errors } = validateLoginInput(email, password);
+    if (!isValid) {
+      return NextResponse.json(
+        { errors },
+        { status: 400 }
+      );
+    }
+
     // التحقق من وجود المستخدم
     const user = await User.findOne({ email }).select("+password");
     if (!user) {
@@ -37,6 +68,13 @@ export async function POST(request: NextRequest) {
       process.env.JWT_SECRET || "your-secret-key",
       { expiresIn: "7d" }
     );
+
+    // إنشاء refresh token
+    const refreshToken = jwt.sign(
+      { id: user._id },
+      process.env.JWT_REFRESH_SECRET || "your-refresh-secret-key",
+      { expiresIn: "30d" }
+    );
     
     // إعداد الاستجابة مع ملف تعريف الارتباط
     const response = NextResponse.json(
@@ -60,6 +98,17 @@ export async function POST(request: NextRequest) {
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60, // 7 أيام
+      path: "/",
+    });
+
+    // إضافة refresh token
+    response.cookies.set({
+      name: "refreshToken",
+      value: refreshToken,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 30 * 24 * 60 * 60, // 30 يوم
       path: "/",
     });
     

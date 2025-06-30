@@ -3,61 +3,61 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
+interface Payment {
+  id?: string;
+  castId: string;
+  number: number;
+  amount: number;
+  date: string;
+}
+
 export default function ReceiptPage() {
   const params = useParams();
-  // const [receiptData, setReceiptData] = useState(null);
-
-  // Receipt data timp
-  const receiptData = {
-    id: 1,
-    customer: "John Doe",
-    date: "2021-08-01",
-    amount: 100,
-  };
+  const [payment, setPayment] = useState<Payment | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Here you can fetch receipt data using the ID
-    // const fetchReceipt = async () => {
-    //   try {
-    //     const response = await fetch(`/api/cast/receipts/${params.id}`);
-    //     const data = await response.json();
-    //     setReceiptData(data);
-    //     console.log(
-    //       "Fetched receipt data for receipt ID",
-    //       params.id,
-    //       ":",
-    //       data
-    //     );
-    //   } catch (error) {
-    //     console.error("Error fetching receipt:", error);
-    //   }
-    // };
-
-    // if (params.id) {
-    //   fetchReceipt();
-    // }
+    const fetchLastPayment = async () => {
+      try {
+        // جلب جميع الأقساط للعميل
+        const res = await fetch(`/api/payments?castId=${params.id}`);
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || "فشل في جلب الأقساط");
+        // الحصول على آخر قسط مدفوع
+        const sorted = data.data.sort(
+          (a: Payment, b: Payment) => b.number - a.number
+        );
+        setPayment(sorted[0] || null);
+      } catch (e: any) {
+        setError(e.message || "فشل في جلب بيانات الإيصال");
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (params.id) fetchLastPayment();
   }, [params.id]);
 
-  if (!receiptData) {
-    return <div>Loading...</div>;
-  }
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div className="text-red-500">{error}</div>;
+  if (!payment) return <div>لا يوجد إيصال متاح لهذا العميل.</div>;
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Receipt #{params.id}</h1>
-      {/* Receipt layout */}
+      <h1 className="text-2xl font-bold mb-4">
+        إيصال القسط الأخير للعميل #{params.id}
+      </h1>
       <div className="flex justify-between mb-4">
         <div>
-          <p>Receipt ID: {receiptData.id}</p>
-          <p>Customer: {receiptData.customer}</p>
+          <p>رقم القسط: {payment.number}</p>
+          <p>معرف العميل: {payment.castId}</p>
         </div>
         <div>
-          <p>Date: {receiptData.date}</p>
-          <p>Amount: {receiptData.amount}</p>
+          <p>التاريخ: {payment.date}</p>
+          <p>المبلغ: {payment.amount}</p>
         </div>
       </div>
-
-      {/* Add your receipt display logic here */}
+      {/* يمكن إضافة تفاصيل إضافية هنا */}
     </div>
   );
 }

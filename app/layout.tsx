@@ -4,7 +4,7 @@ import { Inter } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import { AuthProvider } from "@/lib/context/AuthContext";
 
-const inter = Inter({ subsets: ["latin"] });
+// const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "تطبيق المهام",
@@ -19,7 +19,8 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl">
       <body
-        className={`${inter.className} min-h-screen antialiased bg-background`}
+        // className={`${inter.className} min-h-screen antialiased bg-background`}
+        className={`min-h-screen antialiased bg-background`}
       >
         <AuthProvider>
           <Navbar />

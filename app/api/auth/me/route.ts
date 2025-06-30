@@ -12,15 +12,10 @@ export async function GET(request: NextRequest) {
     
     // التحقق من وجود الرمز
     if (!token) {
-      // إرجاع بيانات وهمية إذا لم يوجد توكن
+      // إرجاع عدم وجود مستخدم
       return NextResponse.json({
-        user: {
-          id: "mock-user-id",
-          name: "مستخدم تجريبي",
-          email: "test@example.com",
-          role: "admin"
-        },
-        isAuthenticated: true
+        user: null,
+        isAuthenticated: false
       }, { status: 200 });
     }
     
@@ -36,15 +31,10 @@ export async function GET(request: NextRequest) {
     // البحث عن المستخدم
     const user = await User.findById(decoded.id).select("-password");
     if (!user) {
-      // إرجاع بيانات وهمية إذا لم يوجد مستخدم
+      // إرجاع عدم وجود مستخدم
       return NextResponse.json({
-        user: {
-          id: "mock-user-id",
-          name: "مستخدم تجريبي",
-          email: "test@example.com",
-          role: "admin"
-        },
-        isAuthenticated: true
+        user: null,
+        isAuthenticated: false
       }, { status: 200 });
     }
     
@@ -52,15 +42,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ user }, { status: 200 });
   } catch (error: any) {
     console.error("Error getting current user:", error);
-    // في حالة أي خطأ، إرجاع بيانات وهمية
+    // في حالة أي خطأ، إرجاع عدم وجود مستخدم
     return NextResponse.json({
-      user: {
-        id: "mock-user-id",
-        name: "مستخدم تجريبي",
-        email: "test@example.com",
-        role: "admin"
-      },
-      isAuthenticated: true
+      user: null,
+      isAuthenticated: false
     }, { status: 200 });
   }
 }

@@ -29,7 +29,7 @@ export function TodoItem({
     onUpdateDescription(todo._id, description);
     setIsEditing(false);
   };
- 
+
   return (
     <div className="flex flex-col gap-2 p-4 bg-white rounded-lg shadow-sm border border-gray-200">
       <div className="flex items-center justify-between">
@@ -83,8 +83,9 @@ export function TodoItem({
           </div>
         ) : (
           <div
-            className="text-sm text-gray-500 cursor-pointer hover:bg-gray-50 p-2 rounded"
+            className="text-sm text-gray-500 cursor-pointer hover:bg-gray-50 p-2 rounded break-words whitespace-pre-line w-full"
             onClick={() => setIsEditing(true)}
+            style={{ wordBreak: "break-word" }}
           >
             {description || "أضف وصفاً..."}
           </div>
