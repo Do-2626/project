@@ -24,3 +24,15 @@ export async function POST(req: NextRequest) {
   
   return NextResponse.json(product);
 }
+
+export async function PATCH() {
+  await connectDB();
+  // جلب أول منتج
+  const firstProduct = await Product.findOne({}).sort({ created_at: 1 });
+  if (!firstProduct) {
+    return NextResponse.json({ error: 'لا يوجد منتجات' }, { status: 404 });
+  }
+  // تحديث جميع المنتجات ليكون current_stock مساوي لأول منتج
+  await Product.updateMany({}, { current_stock: firstProduct.current_stock, updated_at: new Date() });
+  return NextResponse.json({ message: 'تم تعيين الكمية المتوفرة لجميع المنتجات بنجاح', current_stock: firstProduct.current_stock });
+}
