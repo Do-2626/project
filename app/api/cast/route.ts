@@ -1,6 +1,5 @@
 import { connectDB } from "@/lib/db";
 import { Cast } from "@/lib/models/cast";
-import { Installment } from "@/lib/models/installment";
 import { NextRequest, NextResponse } from "next/server";
 
 // واجهة برمجية للحصول على جميع المهام
@@ -20,45 +19,6 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const newCast = new Cast(body);
   await newCast.save();
-
-  // توليد الأقساط تلقائياً
-  try {
-    // استخراج البيانات المطلوبة
-    const castId = newCast._id?.toString();
-    const amount = body.amount;
-    const installments = body.installments;
-    const dateStr = body.date; // صيغة yyyy-mm-dd
-    if (castId && amount && installments && dateStr) {
-      const date = new Date(dateStr);
-      // منطق أول قسط: إذا الشراء بين 25 الشهر السابق و25 الشهر الحالي، أول قسط في بداية الشهر التالي
-      const now = new Date();
-      const prev25 = new Date(now.getFullYear(), now.getMonth() - 1, 25);
-      const curr25 = new Date(now.getFullYear(), now.getMonth(), 25, 23, 59, 59, 999);
-      let firstDueDate;
-      if (date >= prev25 && date <= curr25) {
-        // بداية الشهر القادم
-        firstDueDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-      } else {
-        // بداية الشهر الحالي
-        firstDueDate = new Date(now.getFullYear(), now.getMonth(), 1);
-      }
-      // إنشاء الأقساط
-      for (let i = 0; i < installments; i++) {
-        const dueDate = new Date(firstDueDate);
-        dueDate.setMonth(dueDate.getMonth() + i);
-        await Installment.create({
-          castId: castId,
-          dueDate: dueDate,
-          amount: amount,
-          number: i + 1,
-          status: "DUE",
-        });
-      }
-    }
-  } catch (err) {
-    console.error("[API/cast] Error creating installments (mongoose):", err);
-  }
-
   return NextResponse.json(newCast);
 }
 

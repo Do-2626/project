@@ -3,6 +3,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Payment } from "@/lib/models/payment";
 
+
+// جلب العملاء المستحقين لهذا الشهر فقط بناءً على تاريخ الشراء ومعيار 25
+// جلب بيانات العملاء المرتبطة
+// ربط بيانات العميل بكل قسط
+// فلترة النتائج لإرجاع فقط الأقساط التي لها عميل
+// إحصائيات
+// تحديث حالة القسط (تحصيل أو تأجيل)
+// إضافة قسط جديد للشهر القادم بنفس بيانات القسط مع زيادة الرقم
+// إعادة جدولة نفس القسط للشهر القادم بنفس الرقم
+
+
 export async function GET(req: NextRequest) {
   await connectDB();
   const castId = req.nextUrl.searchParams.get("castId");

@@ -1,0 +1,4 @@
+Removed:
+- app/api/installment/route.ts
+- lib/models/installment.ts
+- app/cast/installment-collection/page.tsx
