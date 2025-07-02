@@ -6,3 +6,11 @@
 // تحديث حالة القسط (تحصيل أو تأجيل)
 // إضافة قسط جديد للشهر القادم بنفس بيانات القسط مع زيادة الرقم
 // إعادة جدولة نفس القسط للشهر القادم بنفس الرقم
+
+// Placeholder handler to fix build error
+export async function GET() {
+  return new Response(JSON.stringify({ message: 'Installment API route placeholder' }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
