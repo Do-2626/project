@@ -16,6 +16,5 @@ export async function POST(request: NextRequest) {
   await connectDB();
   const { title, description } = await request.json();
   const todo = await Todo.create({ title, description, completed: false });
-  // const todo = await Todo.create({ title, completed: false });
   return NextResponse.json(todo);
 }
