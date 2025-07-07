@@ -1,14 +1,9 @@
 import "./globals.css";
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import Navbar from "@/components/Navbar";
-import { AuthProvider } from "@/lib/context/AuthContext";
-
-// const inter = Inter({ subsets: ["latin"] });
+import type { Metadata } from "next"; 
 
 export const metadata: Metadata = {
-  title: "تطبيق المهام",
-  description: "تطبيق لإدارة المهام اليومية",
+  title: "تطبيق المخزون",
+  description: "تطبيق لإدارة المخزون",
 };
 
 export default function RootLayout({
@@ -22,12 +17,9 @@ export default function RootLayout({
         // className={`${inter.className} min-h-screen antialiased bg-background`}
         className={`min-h-screen antialiased bg-background`}
       >
-        <AuthProvider>
-          <Navbar />
-          <main className="container mx-auto my-5 px-4 max-w-5xl">
-            {children}
-          </main>
-        </AuthProvider>
+        <main className="container mx-auto my-5 px-4 max-w-5xl">
+          {children}
+        </main> 
       </body>
     </html>
   );
