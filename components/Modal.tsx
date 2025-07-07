@@ -29,6 +29,7 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
           productId: form.productId,
           quantity: Number(form.quantity),
           type,
+          party: form.party,
           date: selectedDate,
         }),
       });
@@ -73,6 +74,10 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
         <div>
           <label className="block mb-2 text-sm font-medium text-gray-300">الكمية</label>
           <input name="quantity" type="number" min="1" onChange={handleChange} className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5" required />
+        </div>
+        <div>
+          <label className="block mb-2 text-sm font-medium text-gray-300">الجهة (المورد/المندوب/سبب التلف...)</label>
+          <input name="party" onChange={handleChange} className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5" placeholder="اسم الجهة (اختياري)" />
         </div>
       </>
     );

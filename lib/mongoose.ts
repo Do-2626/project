@@ -11,7 +11,7 @@ let cached = (global as any).mongoose || { conn: null, promise: null };
 export async function dbConnect() {
   if (cached.conn) return cached.conn;
   if (!cached.promise) {
-    cached.promise = mongoose.connect(`${MONGODB_URI}/inventory-app-t1`, {
+    cached.promise = mongoose.connect(`${MONGODB_URI}/inventory-app-t2`, {
       bufferCommands: false,
     }).then((mongoose) => mongoose);
   }

@@ -7,20 +7,29 @@ export default function DailyLog({ report, during }: any) {
       {during.length === 0 ? (
         <div className="text-gray-500 text-center p-4">لا توجد عمليات مسجلة لهذا اليوم.</div>
       ) : (
-        <ul className="space-y-2 max-h-48 overflow-y-auto pr-2">
-          {during.map((t: any, i: number) => (
-            <li key={i} className="flex justify-between items-center p-2 bg-gray-800 rounded-md">
-              <div className="flex items-center gap-3">
-                <i className={`fas ${iconMap[t.type]} ${colorMap[t.type]} w-5 text-center`}></i>
-                <span className="font-semibold">{typeMap[t.type]}</span>
-              </div>
-              <div>
-                <span className={`${colorMap[t.type]} font-bold`}>{t.quantity}</span>
-                <span className="text-gray-400"> x {t.productId?.name || ''}</span>
-              </div>
-            </li>
-          ))}
-        </ul>
+        <table className="w-full text-sm">
+          <thead>
+            <tr>
+              <th className="p-2">النوع</th>
+              <th className="p-2">الصنف</th>
+              <th className="p-2">الكمية</th>
+              <th className="p-2">الجهة</th>
+            </tr>
+          </thead>
+          <tbody>
+            {during.map((t: any, i: number) => (
+              <tr key={i} className="bg-gray-800 rounded-md">
+                <td className="p-2 flex items-center gap-2">
+                  <i className={`fas ${iconMap[t.type]} ${colorMap[t.type]} w-5 text-center`}></i>
+                  <span className="font-semibold">{typeMap[t.type]}</span>
+                </td>
+                <td className="p-2">{t.productId?.name || ''}</td>
+                <td className="p-2">{t.quantity}</td>
+                <td className="p-2">{t.party || '-'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
     </div>
   );
