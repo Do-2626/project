@@ -35,7 +35,7 @@ export default function InventoryTable({ products, transactions, onAddProduct, s
                 const itemValue = qty * (product.purchasePrice || 0);
                 return (
                   <tr key={product._id} className="hover:bg-gray-700 transition-colors duration-200">
-                    <td className="p-3 font-medium">{product.name}</td>
+                    <td className="p-3 font-medium text-gray-300">{product.name}</td>
                     <td className="p-3 text-gray-300">{product.weight || '-'}</td>
                     <td className={`p-3 font-semibold ${qty <= 0 ? 'text-red-400' : 'text-green-400'}`}>{qty}</td>
                     {showProtected && <td className="p-3 text-gray-300">{parseFloat(product.purchasePrice || 0).toFixed(2)}</td>}
