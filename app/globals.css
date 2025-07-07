@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -79,4 +81,31 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+body, html {
+  font-family: 'Cairo', 'Tajawal', 'Noto Kufi Arabic', 'Segoe UI', Arial, sans-serif;
+  direction: rtl;
+  background-color: #181c2a;
+}
+
+/* تحسين الخطوط للعناوين */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Cairo', 'Tajawal', 'Noto Kufi Arabic', 'Segoe UI', Arial, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+}
+
+/* تحسين النصوص العامة */
+p, label, th, td, button, input, select {
+  font-family: 'Cairo', 'Tajawal', 'Noto Kufi Arabic', 'Segoe UI', Arial, sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.7;
+}
+
+/* ظل خفيف للعناوين */
+h1, h2, h3 {
+  text-shadow: 0 2px 8px rgba(0,0,0,0.10);
 }

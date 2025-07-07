@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function InventoryTable({ products, transactions, onAddProduct }: any) {
+export default function InventoryTable({ products, transactions, onAddProduct, showProtected }: any) {
   // حساب الكميات الحالية لكل منتج
   const getCurrentQuantity = (productId: string) => {
     const filtered = transactions.filter((t: any) => t.productId._id === productId);
@@ -13,13 +13,7 @@ export default function InventoryTable({ products, transactions, onAddProduct }:
   };
 
   return (
-    <>
-      <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
-        <h2 className="text-2xl font-semibold text-white">قائمة الأصناف</h2>
-        <button onClick={onAddProduct} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-300 flex items-center gap-2">
-          <i className="fas fa-plus-circle"></i> إضافة صنف جديد
-        </button>
-      </div>
+    <> 
       <div className="overflow-x-auto">
         <table className="w-full table-auto border-collapse text-sm md:text-base">
           <thead className="bg-gray-700 text-gray-300 uppercase">
@@ -27,9 +21,9 @@ export default function InventoryTable({ products, transactions, onAddProduct }:
               <th className="p-3">الاسم</th>
               <th className="p-3">الوزن</th>
               <th className="p-3">الكمية الحالية</th>
-              <th className="p-3">سعر الشراء</th>
+              {showProtected && <th className="p-3">سعر الشراء</th>}
               <th className="p-3">سعر البيع</th>
-              <th className="p-3">قيمة الصنف</th>
+              {showProtected && <th className="p-3">قيمة الصنف</th>}
             </tr>
           </thead>
           <tbody className="bg-gray-800 divide-y divide-gray-700">
@@ -44,9 +38,9 @@ export default function InventoryTable({ products, transactions, onAddProduct }:
                     <td className="p-3 font-medium">{product.name}</td>
                     <td className="p-3 text-gray-300">{product.weight || '-'}</td>
                     <td className={`p-3 font-semibold ${qty <= 0 ? 'text-red-400' : 'text-green-400'}`}>{qty}</td>
-                    <td className="p-3 text-gray-300">{parseFloat(product.purchasePrice || 0).toFixed(2)}</td>
+                    {showProtected && <td className="p-3 text-gray-300">{parseFloat(product.purchasePrice || 0).toFixed(2)}</td>}
                     <td className="p-3 text-gray-300">{parseFloat(product.sellingPrice || 0).toFixed(2)}</td>
-                    <td className="p-3 font-bold text-blue-300">{itemValue.toFixed(2)}</td>
+                    {showProtected && <td className="p-3 font-bold text-blue-300">{itemValue.toFixed(2)}</td>}
                   </tr>
                 );
               })
