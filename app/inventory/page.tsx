@@ -104,7 +104,7 @@ export default function InventoryPage() {
                 title="تسجيل عملية صادر"
               >
                 <FaArrowUp className="mb-1" />
-                صادر
+                تحميل
               </button>
               <button
                 onClick={() => setModal({ open: true, type: "incoming", data: null })}
@@ -112,7 +112,7 @@ export default function InventoryPage() {
                 title="تسجيل عملية وارد"
               >
                 <FaArrowDown className="mb-1" />
-                وارد
+                مرتجع
               </button>
               <button
                 onClick={() => setModal({ open: true, type: "damaged", data: null })}
