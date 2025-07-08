@@ -6,6 +6,7 @@ import Calendar from "@/components/Calendar";
 import DailyLog from "@/components/DailyLog";
 import PasswordPrompt from "@/components/PasswordPrompt";
 import dayjs from "dayjs";
+import { FaCartPlus, FaArrowUp, FaArrowDown, FaBan } from "react-icons/fa6";
 
 export default function InventoryPage() {
   const [products, setProducts] = useState([]);
@@ -48,9 +49,9 @@ export default function InventoryPage() {
           إدارة شاملة للمخزون والعمليات اليومية
         </p>
       </header>
-      <main className="grid grid-cols-1 lg:grid-cols-3 gap-8 font-cairo">
+      <main className="grid gap-8 font-cairo">
         <div className="lg:col-span-2 bg-gradient-to-br from-gray-800 via-gray-900 to-gray-800 p-6 rounded-2xl shadow-2xl border border-gray-700">
-          <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          {/* <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <h2 className="text-2xl font-bold text-white drop-shadow font-cairo">
               قائمة الأصناف
             </h2>
@@ -61,10 +62,13 @@ export default function InventoryPage() {
               className="bg-blue-700 hover:bg-blue-800 focus:ring-2 focus:ring-blue-400 text-white font-bold py-2 px-6 rounded-xl shadow-lg transition duration-200 text-lg flex items-center gap-2 font-cairo"
               title="إضافة صنف جديد"
             >
-              <i className="fas fa-plus"></i> إضافة صنف جديد
+              <span className="inline-flex items-center gap-2">
+                <i className="fas fa-plus-circle"></i>
+                إضافة صنف جديد
+              </span>
             </button>
-          </div>
-          <div className="overflow-x-auto rounded-xl border border-gray-700 bg-gray-900 shadow-inner mb-8">
+          </div> */}
+          {/* <div className="overflow-x-auto rounded-xl border border-gray-700 bg-gray-900 shadow-inner mb-8">
             <InventoryTable
               products={products}
               transactions={transactions}
@@ -73,6 +77,13 @@ export default function InventoryPage() {
               }
               showProtected={showProtected}
             />
+          </div> */}
+
+          <div className="bg-gradient-to-br from-gray-800 via-gray-900 to-gray-800 p-6 rounded-2xl shadow-2xl border border-gray-700">
+            <h2 className="text-xl font-semibold mb-4 text-white drop-shadow">
+              اليوم
+            </h2>
+            <Calendar selectedDate={selectedDate} onChange={setSelectedDate} />
           </div>
           <div className="mt-10">
             <h3 className="text-lg font-semibold text-blue-300 mb-4 text-center tracking-wide font-cairo">
@@ -84,7 +95,7 @@ export default function InventoryPage() {
                 className="action-btn bg-green-600 hover:bg-green-700 focus:ring-2 focus:ring-green-400 text-white font-bold py-4 px-2 rounded-xl shadow-lg flex flex-col items-center gap-2 transition duration-200 text-base"
                 title="تسجيل عملية مشتريات"
               >
-                <i className="fas fa-shopping-cart fa-lg"></i>
+                <FaCartPlus className="mb-1" />
                 مشتريات
               </button>
               <button
@@ -92,7 +103,7 @@ export default function InventoryPage() {
                 className="action-btn bg-red-600 hover:bg-red-700 focus:ring-2 focus:ring-red-400 text-white font-bold py-4 px-2 rounded-xl shadow-lg flex flex-col items-center gap-2 transition duration-200 text-base"
                 title="تسجيل عملية صادر"
               >
-                <i className="fas fa-arrow-up fa-lg"></i>
+                <FaArrowUp className="mb-1" />
                 صادر
               </button>
               <button
@@ -100,62 +111,20 @@ export default function InventoryPage() {
                 className="action-btn bg-yellow-500 hover:bg-yellow-600 focus:ring-2 focus:ring-yellow-300 text-white font-bold py-4 px-2 rounded-xl shadow-lg flex flex-col items-center gap-2 transition duration-200 text-base"
                 title="تسجيل عملية وارد"
               >
-                <i className="fas fa-arrow-down fa-lg"></i>
-                مرتجع
+                <FaArrowDown className="mb-1" />
+                وارد
               </button>
               <button
                 onClick={() => setModal({ open: true, type: "damaged", data: null })}
                 className="action-btn bg-purple-600 hover:bg-purple-700 focus:ring-2 focus:ring-purple-400 text-white font-bold py-4 px-2 rounded-xl shadow-lg flex flex-col items-center gap-2 transition duration-200 text-base"
                 title="تسجيل عملية تالف"
               >
-                <i className="fas fa-heart-broken fa-lg"></i>
+                <FaBan className="mb-1" />
                 تالف
               </button>
             </div>
           </div>
-        </div>
-        <div className="space-y-8">
-          <div className="bg-gradient-to-br from-gray-800 via-gray-900 to-gray-800 p-6 rounded-2xl shadow-2xl border border-gray-700">
-            <h2 className="text-xl font-semibold mb-4 text-white drop-shadow">
-              التقويم
-            </h2>
-            <Calendar selectedDate={selectedDate} onChange={setSelectedDate} />
-          </div>
-          <div className="bg-gradient-to-br from-gray-800 via-gray-900 to-gray-800 p-6 rounded-2xl shadow-2xl border border-gray-700">
-            <h2 className="text-xl font-semibold mb-4 text-white drop-shadow">
-              التقارير
-            </h2>
-            {!showProtected ? (
-              <div className="mb-4">
-                <PasswordPrompt
-                  onSuccess={() => setShowProtected(true)}
-                  label="كلمة المرور لعرض التقارير المالية"
-                  buttonText="تأكيد"
-                />
-              </div>
-            ) : (
-              <div className="bg-gray-700 p-4 rounded-xl mb-6 shadow-inner border border-gray-600">
-                <p className="text-gray-300">إجمالي قيمة المخزون الحالية</p>
-                <p className="text-3xl font-bold text-green-400 mt-2">
-                  {products
-                    .reduce((acc: number, p: any) => {
-                      const qty =
-                        dailyReport?.report?.find(
-                          (r: any) => r.product._id === p._id
-                        )?.endQty || 0;
-                      return acc + qty * (p.purchasePrice || 0);
-                    }, 0)
-                    .toFixed(2)}{" "}
-                  جنيه
-                </p>
-              </div>
-            )}
-            {dailyReport && (
-              <DailyLog
-                report={dailyReport.report}
-                during={dailyReport.during}
-              />
-            )}
+          <div className="space-y-8">
             <div className="bg-gray-700 p-4 rounded-xl mt-6 shadow-inner border border-gray-600">
               <h3 className="text-lg font-semibold mb-3 text-gray-200 border-b border-gray-600 pb-2">
                 حالة المخزون
@@ -172,9 +141,7 @@ export default function InventoryPage() {
                   {dailyReport?.report?.map((r: any, idx: number) => (
                     <tr
                       key={r.product._id}
-                      className={
-                        idx % 2 === 0 ? "bg-gray-800" : "bg-gray-900"
-                      }
+                      className={idx % 2 === 0 ? "bg-gray-800" : "bg-gray-900"}
                     >
                       <td className="p-2 font-medium text-white">
                         {r.product.name}
@@ -185,6 +152,50 @@ export default function InventoryPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            <div className="">
+              {dailyReport && (
+                <DailyLog
+                  report={dailyReport.report}
+                  during={dailyReport.during}
+                  iconMap={{
+                    purchase: <FaCartPlus className="inline text-green-400 mr-1" />,
+                    outgoing: <FaArrowUp className="inline text-red-400 mr-1" />,
+                    incoming: <FaArrowDown className="inline text-yellow-400 mr-1" />,
+                    damaged: <FaBan className="inline text-purple-400 mr-1" />,
+                  }}
+                />
+              )}
+              <h2 className="text-xl font-semibold mt-4 text-white drop-shadow">
+                التقارير
+              </h2>
+              {!showProtected ? (
+                <div className="mb-4">
+                  <PasswordPrompt
+                    onSuccess={() => setShowProtected(true)}
+                    label="كلمة المرور لعرض التقارير المالية"
+                    buttonText="تأكيد"
+                  />
+                </div>
+              ) : (
+                <div className="bg-gray-700 p-4 rounded-xl mb-6 shadow-inner border border-gray-600">
+                  <p className="text-gray-300">إجمالي قيمة المخزون الحالية</p>
+                  <p className="text-3xl font-bold text-green-400 mt-2">
+                    {products
+                      .reduce((acc: number, p: any) => {
+                        const qty =
+                          dailyReport?.report?.find(
+                            (r: any) => r.product._id === p._id
+                          )?.endQty || 0;
+                        return acc + qty * (p.purchasePrice || 0);
+                      }, 0)
+                      .toFixed(2)}{" "}
+                    جنيه
+                  </p>
+                </div>
+              )}
+              
             </div>
           </div>
         </div>

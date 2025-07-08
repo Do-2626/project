@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 // كلمة المرور الحقيقية محفوظة فقط في الخادم
-const PASSWORD = "2627";
+const PASSWORD = "admin2626";
 
 export async function POST(req: Request) {
   try {
