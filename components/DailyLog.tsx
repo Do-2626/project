@@ -13,8 +13,8 @@ interface DailyLogProps {
 
 const typeLabels: Record<string, string> = {
   purchase: "مشتريات",
-  outgoing: "صادر",
-  incoming: "وارد",
+  outgoing: "تحميل",
+  incoming: "مرتجع",
   damaged: "تالف",
 };
 

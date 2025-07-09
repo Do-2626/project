@@ -89,19 +89,11 @@ export default function InventoryPage() {
             <h3 className="text-lg font-semibold text-blue-300 mb-4 text-center tracking-wide font-cairo">
               العمليات اليومية
             </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 justify-center">
-              <button
-                onClick={() => setModal({ open: true, type: "purchase", data: null })}
-                className="action-btn bg-green-600 hover:bg-green-700 focus:ring-2 focus:ring-green-400 text-white font-bold py-4 px-2 rounded-xl shadow-lg flex flex-col items-center gap-2 transition duration-200 text-base"
-                title="تسجيل عملية مشتريات"
-              >
-                <FaCartPlus className="mb-1" />
-                مشتريات
-              </button>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 justify-center">
               <button
                 onClick={() => setModal({ open: true, type: "outgoing", data: null })}
                 className="action-btn bg-red-600 hover:bg-red-700 focus:ring-2 focus:ring-red-400 text-white font-bold py-4 px-2 rounded-xl shadow-lg flex flex-col items-center gap-2 transition duration-200 text-base"
-                title="تسجيل عملية صادر"
+                title="تسجيل عملية تحميل"
               >
                 <FaArrowUp className="mb-1" />
                 تحميل
@@ -109,7 +101,7 @@ export default function InventoryPage() {
               <button
                 onClick={() => setModal({ open: true, type: "incoming", data: null })}
                 className="action-btn bg-yellow-500 hover:bg-yellow-600 focus:ring-2 focus:ring-yellow-300 text-white font-bold py-4 px-2 rounded-xl shadow-lg flex flex-col items-center gap-2 transition duration-200 text-base"
-                title="تسجيل عملية وارد"
+                title="تسجيل عملية مرتجع"
               >
                 <FaArrowDown className="mb-1" />
                 مرتجع
