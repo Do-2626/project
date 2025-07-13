@@ -7,8 +7,8 @@ interface IncomeStatementKPIsProps {
 }
 
 export default function IncomeStatementKPIs({ data }: IncomeStatementKPIsProps) {
-  const totalRevenue = data.revenues?.reduce((sum, r) => sum + r.amount, 0) || 0;
-  const totalExpenses = data.expenses?.reduce((sum, e) => sum + e.amount, 0) || 0;
+  const totalRevenue = data.sales || 0;
+  const totalExpenses = data.totalExpenses || 0;
   
   const kpiData = [
     {
