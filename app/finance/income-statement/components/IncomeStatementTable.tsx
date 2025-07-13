@@ -19,26 +19,14 @@ export default function IncomeStatementTable({ data }: IncomeStatementTableProps
           </thead>
           <tbody>
             <tr className="bg-gray-800 border-b border-gray-700">
-              <td className="px-6 py-4 font-semibold">الإيرادات</td>
-              <td className="px-6 py-4"></td>
+              <td className="px-6 py-4 font-semibold">الإيرادات الإجمالية</td>
+              <td className="px-6 py-4">{data.sales?.toFixed(2) ?? '0.00'}</td>
             </tr>
-            {data.revenues?.map((revenue, index) => (
-              <tr key={index} className="bg-gray-800 border-b border-gray-700">
-                <td className="px-6 py-4 pl-8">{revenue.category}</td>
-                <td className="px-6 py-4">{revenue.amount.toFixed(2)}</td>
-              </tr>
-            ))}
             
             <tr className="bg-gray-800 border-b border-gray-700">
-              <td className="px-6 py-4 font-semibold">المصروفات</td>
-              <td className="px-6 py-4"></td>
+              <td className="px-6 py-4 font-semibold">المصروفات الإجمالية</td>
+              <td className="px-6 py-4">{data.totalExpenses?.toFixed(2) ?? '0.00'}</td>
             </tr>
-            {data.expenses?.map((expense, index) => (
-              <tr key={index} className="bg-gray-800 border-b border-gray-700">
-                <td className="px-6 py-4 pl-8">{expense.category}</td>
-                <td className="px-6 py-4">{expense.amount.toFixed(2)}</td>
-              </tr>
-            ))}
             
             <tr className="bg-gray-800 border-b border-gray-700">
               <td className="px-6 py-4 font-semibold">صافي الربح</td>
