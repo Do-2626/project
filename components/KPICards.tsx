@@ -22,17 +22,24 @@ interface KPICardsProps {
 
 export default function KPICards({ data }: KPICardsProps) {
   // حساب هامش الربح الإجمالي
-  const grossProfit = data.sales - data.costOfGoodsSold;
-  const grossProfitMargin = data.sales > 0 ? (grossProfit / data.sales) * 100 : 0;
+  // Add null safety checks for all data properties
+  const sales = data?.sales || 0;
+  const costOfGoodsSold = data?.costOfGoodsSold || 0;
+  const totalIncome = data?.totalIncome || 0;
+  const netProfit = data?.netProfit || 0;
+  const operatingExpenses = data?.operatingExpenses || 0;
+
+  const grossProfit = sales - costOfGoodsSold;
+  const grossProfitMargin = sales > 0 ? (grossProfit / sales) * 100 : 0;
   
   // حساب هامش صافي الربح
-  const netProfitMargin = data.totalIncome > 0 ? (data.netProfit / data.totalIncome) * 100 : 0;
+  const netProfitMargin = totalIncome > 0 ? (netProfit / totalIncome) * 100 : 0;
   
   // حساب نسبة المصروفات التشغيلية
-  const operatingExpenseRatio = data.totalIncome > 0 ? (data.operatingExpenses / data.totalIncome) * 100 : 0;
+  const operatingExpenseRatio = totalIncome > 0 ? (operatingExpenses / totalIncome) * 100 : 0;
   
   // حساب نسبة تكلفة البضاعة المباعة
-  const cogsRatio = data.sales > 0 ? (data.costOfGoodsSold / data.sales) * 100 : 0;
+  const cogsRatio = sales > 0 ? (costOfGoodsSold / sales) * 100 : 0;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -48,7 +55,7 @@ export default function KPICards({ data }: KPICardsProps) {
           </div>
         </div>
         <div className="mt-2 text-sm text-blue-100">
-          <span className="font-medium">{grossProfit.toFixed(2)}</span> من إجمالي المبيعات
+          <span className="font-medium">{grossProfit}</span> من إجمالي المبيعات
         </div>
       </div>
 
@@ -68,7 +75,7 @@ export default function KPICards({ data }: KPICardsProps) {
           </div>
         </div>
         <div className="mt-2 text-sm text-green-100">
-          <span className="font-medium">{data.netProfit.toFixed(2)}</span> من إجمالي الإيرادات
+          <span className="font-medium">{(data.netProfit || 0)}</span> من إجمالي الإيرادات
         </div>
       </div>
 
@@ -84,7 +91,7 @@ export default function KPICards({ data }: KPICardsProps) {
           </div>
         </div>
         <div className="mt-2 text-sm text-red-100">
-          <span className="font-medium">{data.operatingExpenses.toFixed(2)}</span> من إجمالي الإيرادات
+          <span className="font-medium">{data.operatingExpenses}</span> من إجمالي الإيرادات
         </div>
       </div>
 
@@ -100,7 +107,7 @@ export default function KPICards({ data }: KPICardsProps) {
           </div>
         </div>
         <div className="mt-2 text-sm text-purple-100">
-          <span className="font-medium">{data.costOfGoodsSold.toFixed(2)}</span> من إجمالي المبيعات
+          <span className="font-medium">{data.costOfGoodsSold}</span> من إجمالي المبيعات
         </div>
       </div>
     </div>

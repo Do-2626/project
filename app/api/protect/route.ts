@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
-// كلمة المرور الحقيقية محفوظة فقط في الخادم
-const PASSWORD = "admin2626";
+// كلمة المرور الحقيقية محفوظة في ملف البيئة
+const PASSWORD = process.env.ADMIN_PASSWORD;
 
 export async function POST(req: Request) {
   try {

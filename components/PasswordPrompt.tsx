@@ -7,7 +7,7 @@ interface PasswordPromptProps {
 }
 
 const PasswordPrompt: React.FC<PasswordPromptProps> = ({ onSuccess, label = "كلمة المرور", buttonText = "تأكيد" }) => {
-  const [password, setPassword] = useState("");
+  const [password, setPassword] = useState("admin2626");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 

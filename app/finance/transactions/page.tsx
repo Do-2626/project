@@ -1,261 +1,36 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { FaMoneyBillWave, FaShoppingCart, FaReceipt } from "react-icons/fa";
-import Calendar from "@/components/Calendar";
-import dayjs from "dayjs";
+import React from "react";
 import PasswordPrompt from "@/components/PasswordPrompt";
-import ExportButton from "@/components/ExportButton";
-import { Types } from 'mongoose';
-
-// تعريف أنواع البيانات
-interface Product {
-  _id: string;
-  name: string;
-  purchasePrice: number;
-  sellingPrice: number;
-  weight?: string;
-}
-
-interface FinancialTransaction {
-  _id: string;
-  type: 'expense' | 'income' | 'purchase';
-  amount: number;
-  category: string;
-  description?: string;
-  party?: string;
-  date: string;
-  invoiceNumber?: string;
-  productId?: string | Types.ObjectId; // يمكن أن يكون سلسلة نصية أو ObjectId
-  quantity?: number;
-  isRecurring: boolean;
-  createdAt: string;
-}
-
-const expenseCategories = [
-  "إيجار",
-  "رواتب",
-  "مرافق",
-  "نقل",
-  "تسويق",
-  "صيانة",
-  "مستلزمات",
-  "أخرى",
-];
-
-const incomeCategories = ["مبيعات", "استثمارات", "إيرادات أخرى"];
-
-const purchaseCategories = [
-  "مشتريات على الحساب",
-  "مشتريات نقدية",
-  "مشتريات أخرى",
-];
+import { FaMoneyBillWave, FaShoppingCart, FaReceipt } from "react-icons/fa";
+import useTransactions from "./hooks/useTransactions";
+import TransactionSummary from "./components/TransactionSummary";
+import TransactionButtons from "./components/TransactionButtons";
+import TransactionList from "./components/TransactionList";
+import { FinancialTransaction } from "./types";
+import { expenseCategories, incomeCategories, purchaseCategories } from "./utils/constants";
 
 export default function FinancialTransactionsPage() {
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [transactions, setTransactions] = useState<FinancialTransaction[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [selectedDate, setSelectedDate] = useState(
-    dayjs().format("YYYY-MM-DD")
-  );
-  const [showModal, setShowModal] = useState(false);
-  const [modalType, setModalType] = useState<"expense" | "income" | "purchase">(
-    "expense"
-  );
-  const [formData, setFormData] = useState<Partial<FinancialTransaction>>({
-    date: selectedDate,
-    type: "expense",
-    amount: 0,
-    category: "",
-    description: "",
-    party: "",
-    invoiceNumber: "",
-    isRecurring: false,
-  });
-  const [filterType, setFilterType] = useState<string>("all");
-
-  // جلب المعاملات المالية
-  useEffect(() => {
-    if (isAuthorized) {
-      fetchTransactions();
-    }
-  }, [selectedDate, isAuthorized, filterType]);
-
-  // جلب المنتجات
-  useEffect(() => {
-    if (isAuthorized) {
-      fetch("/api/inventory")
-        .then((res) => res.json())
-        .then(setProducts);
-    }
-  }, [isAuthorized]);
-
-  // تحديث تاريخ النموذج عند تغيير التاريخ المحدد
-  useEffect(() => {
-    setFormData((prev) => ({ ...prev, date: selectedDate }));
-  }, [selectedDate]);
-
-  const fetchTransactions = async () => {
-    let url = `/api/finance/transactions?date=${selectedDate}`;
-    if (filterType !== "all") {
-      url += `&type=${filterType}`;
-    }
-
-    const res = await fetch(url);
-    const data = await res.json();
-    setTransactions(data);
-  };
-
-  const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
-  ) => {
-    const { name, value, type } = e.target as HTMLInputElement;
-
-    if (type === "checkbox") {
-      const checked = (e.target as HTMLInputElement).checked;
-      setFormData({ ...formData, [name]: checked });
-    } else if (type === "number") {
-      setFormData({ ...formData, [name]: parseFloat(value) || 0 });
-    } else {
-      setFormData({ ...formData, [name]: value });
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    try {
-      const response = await fetch("/api/finance/transactions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...formData,
-          type: modalType,
-          date: selectedDate,
-        }),
-      });
-
-      if (response.ok) {
-        // إعادة تعيين النموذج وإغلاق النافذة المنبثقة
-        setFormData({
-          date: selectedDate,
-          type: modalType,
-          amount: 0,
-          category: "",
-          description: "",
-          party: "",
-          invoiceNumber: "",
-          isRecurring: false,
-        });
-        setShowModal(false);
-        fetchTransactions();
-      } else {
-        const error = await response.json();
-        alert(`خطأ: ${error.message}`);
-      }
-    } catch (error) {
-      console.error("خطأ في إرسال النموذج:", error);
-      alert("حدث خطأ أثناء معالجة الطلب");
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("هل أنت متأكد من حذف هذه المعاملة؟")) return;
-
-    try {
-      const response = await fetch(`/api/finance/transactions?id=${id}`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        fetchTransactions();
-      } else {
-        const error = await response.json();
-        alert(`خطأ: ${error.message}`);
-      }
-    } catch (error) {
-      console.error("خطأ في حذف المعاملة:", error);
-      alert("حدث خطأ أثناء معالجة الطلب");
-    }
-  };
-
-  const openModal = (type: "expense" | "income" | "purchase") => {
-    setModalType(type);
-    setFormData({
-      date: selectedDate,
-      type,
-      amount: 0,
-      category: "",
-      description: "",
-      party: "",
-      invoiceNumber: "",
-      isRecurring: false,
-      ...(type === "purchase" ? { productId: "", quantity: 1 } : {}),
-    });
-    setShowModal(true);
-  };
-
-  const getTypeLabel = (type: string) => {
-    switch (type) {
-      case "expense":
-        return "مصروف";
-      case "income":
-        return "إيراد";
-      case "purchase":
-        return "مشتريات";
-      default:
-        return type;
-    }
-  };
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case "expense":
-        return "text-red-500";
-      case "income":
-        return "text-green-500";
-      case "purchase":
-        return "text-blue-500";
-      default:
-        return "text-gray-500";
-    }
-  };
-
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case "expense":
-        return <FaMoneyBillWave className="text-red-500" />;
-      case "income":
-        return <FaReceipt className="text-green-500" />;
-      case "purchase":
-        return <FaShoppingCart className="text-blue-500" />;
-      default:
-        return null;
-    }
-  };
-
-  // حساب إجماليات المعاملات
-  const calculateTotals = () => {
-    let totalExpenses = 0;
-    let totalIncome = 0;
-    let totalPurchases = 0;
-
-    transactions.forEach((transaction) => {
-      if (transaction.type === "expense") {
-        totalExpenses += transaction.amount;
-      } else if (transaction.type === "income") {
-        totalIncome += transaction.amount;
-      } else if (transaction.type === "purchase") {
-        totalPurchases += transaction.amount;
-      }
-    });
-
-    return { totalExpenses, totalIncome, totalPurchases };
-  };
+  const {
+    isAuthorized,
+    setIsAuthorized,
+    transactions,
+    products,
+    selectedDate,
+    setSelectedDate,
+    showModal,
+    setShowModal,
+    modalType,
+    formData,
+    setFormData,
+    filterType,
+    setFilterType,
+    handleInputChange,
+    handleSubmit,
+    handleDelete,
+    openModal,
+    calculateTotals,
+  } = useTransactions();
 
   const { totalExpenses, totalIncome, totalPurchases } = calculateTotals();
 
@@ -288,158 +63,41 @@ export default function FinancialTransactionsPage() {
           </p>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700">
-            <h2 className="text-xl font-semibold mb-4 text-white">التاريخ</h2>
-            <Calendar selectedDate={selectedDate} onChange={setSelectedDate} />
-          </div>
+        <TransactionSummary 
+          selectedDate={selectedDate}
+          setSelectedDate={setSelectedDate}
+          totals={{ totalExpenses, totalIncome, totalPurchases }}
+        />
 
-          <div className="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700 md:col-span-2">
-            <h2 className="text-xl font-semibold mb-4 text-white">
-              ملخص اليوم
-            </h2>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-gray-700 p-4 rounded-lg">
-                <p className="text-sm text-gray-400">المصروفات</p>
-                <p className="text-2xl font-bold text-red-500">
-                  {totalExpenses.toFixed(2)}
-                </p>
-              </div>
-              <div className="bg-gray-700 p-4 rounded-lg">
-                <p className="text-sm text-gray-400">الإيرادات</p>
-                <p className="text-2xl font-bold text-green-500">
-                  {totalIncome.toFixed(2)}
-                </p>
-              </div>
-              <div className="bg-gray-700 p-4 rounded-lg">
-                <p className="text-sm text-gray-400">المشتريات</p>
-                <p className="text-2xl font-bold text-blue-500">
-                  {totalPurchases.toFixed(2)}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <TransactionButtons 
+          openModal={openModal}
+          filterType={filterType}
+          setFilterType={setFilterType}
+          transactions={transactions}
+        />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <button
-            onClick={() => openModal("expense")}
-            className="bg-red-600 hover:bg-red-700 text-white p-4 rounded-xl shadow-lg flex items-center justify-center gap-3 transition-colors"
-          >
-            <FaMoneyBillWave size={20} />
-            <span className="text-lg font-semibold">إضافة مصروف</span>
-          </button>
-          <button
-            onClick={() => openModal("income")}
-            className="bg-green-600 hover:bg-green-700 text-white p-4 rounded-xl shadow-lg flex items-center justify-center gap-3 transition-colors"
-          >
-            <FaReceipt size={20} />
-            <span className="text-lg font-semibold">إضافة إيراد</span>
-          </button>
-          <button
-            onClick={() => openModal("purchase")}
-            className="bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-xl shadow-lg flex items-center justify-center gap-3 transition-colors"
-          >
-            <FaShoppingCart size={20} />
-            <span className="text-lg font-semibold">تسجيل مشتريات</span>
-          </button>
-        </div>
-
-        <div className="bg-gray-800 rounded-xl shadow-lg border border-gray-700 overflow-hidden">
-          <div className="p-4 bg-gray-700 flex justify-between items-center">
-            <h2 className="text-xl font-semibold text-white">المعاملات</h2>
-            <div className="flex gap-4">
-              <select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-                className="bg-gray-800 text-white border border-gray-600 rounded-lg px-3 py-2"
-              >
-                <option value="all">جميع المعاملات</option>
-                <option value="expense">المصروفات</option>
-                <option value="income">الإيرادات</option>
-                <option value="purchase">المشتريات</option>
-              </select>
-              <ExportButton
-                data={transactions}
-                fileName={`financial-transactions-${selectedDate}`}
-                label="تصدير"
-              />
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left text-gray-300">
-              <thead className="text-xs uppercase bg-gray-700 text-gray-300">
-                <tr>
-                  <th className="px-6 py-3">النوع</th>
-                  <th className="px-6 py-3">التصنيف</th>
-                  <th className="px-6 py-3">المبلغ</th>
-                  <th className="px-6 py-3">الوصف</th>
-                  <th className="px-6 py-3">الجهة</th>
-                  <th className="px-6 py-3">رقم الفاتورة</th>
-                  <th className="px-6 py-3">إجراءات</th>
-                </tr>
-              </thead>
-              <tbody>
-                {transactions.length === 0 ? (
-                  <tr className="bg-gray-800 border-b border-gray-700">
-                    <td
-                      colSpan={7}
-                      className="px-6 py-4 text-center text-gray-400"
-                    >
-                      لا توجد معاملات لهذا اليوم
-                    </td>
-                  </tr>
-                ) : (
-                  transactions.map((transaction) => (
-                    <tr
-                      key={transaction._id}
-                      className="bg-gray-800 border-b border-gray-700 hover:bg-gray-700"
-                    >
-                      <td className="px-6 py-4 flex items-center gap-2">
-                        {getTypeIcon(transaction.type)}
-                        <span className={getTypeColor(transaction.type)}>
-                          {getTypeLabel(transaction.type)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">{transaction.category}</td>
-                      <td className="px-6 py-4 font-semibold">
-                        {transaction.amount.toFixed(2)}
-                      </td>
-                      <td className="px-6 py-4">
-                        {transaction.description || "-"}
-                      </td>
-                      <td className="px-6 py-4">{transaction.party || "-"}</td>
-                      <td className="px-6 py-4">
-                        {transaction.invoiceNumber || "-"}
-                      </td>
-                      <td className="px-6 py-4">
-                        <button
-                          onClick={() => handleDelete(transaction._id)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          حذف
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <TransactionList 
+          transactions={transactions}
+          handleDelete={handleDelete}
+          selectedDate={selectedDate}
+          setSelectedDate={setSelectedDate}
+          filterType={filterType}
+          setFilterType={setFilterType}
+        />
       </div>
 
       {/* نافذة إضافة معاملة جديدة */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
-          <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6 modal-content">
+          <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto p-6 modal-content">
             <div className="flex justify-between items-center border-b border-gray-700 pb-3 mb-4">
+              {/* العنوان */}
               <h3 className="text-xl font-semibold text-white">
                 {modalType === "expense" && "إضافة مصروف جديد"}
                 {modalType === "income" && "إضافة إيراد جديد"}
                 {modalType === "purchase" && "تسجيل عملية شراء"}
               </h3>
+              {/* زرالاغلاق */}
               <button
                 onClick={() => setShowModal(false)}
                 className="text-gray-400 hover:text-white"
@@ -450,6 +108,44 @@ export default function FinancialTransactionsPage() {
 
             <form onSubmit={handleSubmit}>
               <div className="space-y-4">
+                {/* حقول الحسابات المالية */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block mb-2 text-sm font-medium text-gray-300">
+                      الحساب المدين
+                    </label>
+                    <select
+                      name="debitAccount"
+                      value={formData.debitAccount || ''}
+                      onChange={handleInputChange}
+                      className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5"
+                      required
+                    >
+                      <option value="">اختر الحساب المدين</option>
+                      <option value="المخزون">المخزون</option>
+                      <option value="النقدية">النقدية</option>
+                      <option value="الموردين">الموردين</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block mb-2 text-sm font-medium text-gray-300">
+                      الحساب الدائن
+                    </label>
+                    <select
+                      name="creditAccount"
+                      value={formData.creditAccount || ''}
+                      onChange={handleInputChange}
+                      className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5"
+                      required
+                    >
+                      <option value="">اختر الحساب الدائن</option>
+                      <option value="النقدية">النقدية</option>
+                      <option value="المصروفات">المصروفات</option>
+                      <option value="المبيعات">المبيعات</option>
+                    </select>
+                  </div>
+                </div>
+
                 {/* حقول مشتركة */}
                 <div>
                   <label className="block mb-2 text-sm font-medium text-gray-300">
@@ -610,7 +306,8 @@ export default function FinancialTransactionsPage() {
                 </button>
                 <button
                   type="submit"
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition duration-300"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!formData.debitAccount || !formData.creditAccount}
                 >
                   حفظ
                 </button>

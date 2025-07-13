@@ -11,7 +11,7 @@ let cached = (global as any).mongoose || { conn: null, promise: null };
 export async function dbConnect() {
   if (cached.conn) return cached.conn;
   if (!cached.promise) {
-    cached.promise = mongoose.connect(`${MONGODB_URI}/inventory-app-t3`, {
+    cached.promise = mongoose.connect(`${MONGODB_URI}/inventory-app-t5`, {
       bufferCommands: false,
     }).then((mongoose) => mongoose);
   }
@@ -19,3 +19,8 @@ export async function dbConnect() {
   (global as any).mongoose = cached;
   return cached.conn;
 }
+
+
+
+
+
