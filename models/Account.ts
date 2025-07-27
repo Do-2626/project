@@ -1,21 +1,34 @@
-import mongoose, { Schema, models, model, Document } from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
 
-export interface AccountDocument extends Document {
-  name: string;
+export interface IAccount extends Document {
   code: string;
-  type: 'asset' | 'liability' | 'equity' | 'revenue' | 'expense';
-  description?: string;
+  name: string;
+  type: 'asset' | 'liability' | 'equity' | 'income' | 'expense';
+  parentId?: Schema.Types.ObjectId;
+  balance: number;
   isActive: boolean;
   createdAt: Date;
+  updatedAt: Date;
 }
 
-const AccountSchema = new Schema<AccountDocument>({
-  name: { type: String, required: true, unique: true },
+const accountSchema = new Schema<IAccount>({
   code: { type: String, required: true, unique: true },
-  type: { type: String, enum: ['asset', 'liability', 'equity', 'revenue', 'expense'], required: true },
-  description: { type: String },
+  name: { type: String, required: true },
+  type: { 
+    type: String, 
+    required: true,
+    enum: ['asset', 'liability', 'equity', 'income', 'expense']
+  },
+  parentId: { type: Schema.Types.ObjectId, ref: 'Account' },
+  balance: { type: Number, default: 0 },
   isActive: { type: Boolean, default: true },
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
 });
 
-export default models.Account || model<AccountDocument>('Account', AccountSchema);
+accountSchema.pre('save', function(next) {
+  this.updatedAt = new Date();
+  next();
+});
+
+export default mongoose.models.Account || mongoose.model<IAccount>('Account', accountSchema);
