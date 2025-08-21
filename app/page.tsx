@@ -133,7 +133,7 @@ export default function Home() {
             <p className="text-blue-100 mt-2">إدارة المنتجات والمخزون</p>
           </Link>
           
-          <Link href="/transactions" className="bg-gradient-to-br from-green-600 to-green-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col items-center justify-center text-center">
+          <Link href="/finance/transactions" className="bg-gradient-to-br from-green-600 to-green-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col items-center justify-center text-center">
             <Receipt className="h-12 w-12 text-white mb-4" />
             <h2 className="text-xl font-bold text-white">المعاملات</h2>
             <p className="text-green-100 mt-2">تسجيل وعرض المعاملات</p>
