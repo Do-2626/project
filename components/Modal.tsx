@@ -107,8 +107,8 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
-      <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6 modal-content scale-95">
+    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 overflow-y-auto">
+      <div className="bg-gray-800 rounded-lg shadow-xl w-[95%] max-w-[500px] p-4 mx-2 modal-content scale-95">
         <div className="flex justify-between items-center border-b border-gray-700 pb-3 mb-4">
           <h3 className="text-xl font-semibold">{type === "addProduct" ? "إضافة صنف جديد" : "تسجيل عملية"}</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-white">&times;</button>
