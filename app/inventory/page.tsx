@@ -37,6 +37,8 @@ export default function InventoryPage() {
     fetch(`/api/inventory/daily-report?date=${selectedDate}`)
       .then((res) => res.json())
       .then(setDailyReport);
+      console.log('dailyReport',dailyReport);
+
   }, [selectedDate, products, transactions]);
 
   return (
@@ -91,7 +93,9 @@ export default function InventoryPage() {
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 justify-center">
               <button
-                onClick={() => setModal({ open: true, type: "outgoing", data: null })}
+                onClick={() =>
+                  setModal({ open: true, type: "outgoing", data: null })
+                }
                 className="action-btn bg-red-600 hover:bg-red-700 focus:ring-2 focus:ring-red-400 text-white font-bold py-4 px-2 rounded-xl shadow-lg flex flex-col items-center gap-2 transition duration-200 text-base"
                 title="تسجيل عملية تحميل"
               >
@@ -99,7 +103,9 @@ export default function InventoryPage() {
                 تحميل
               </button>
               <button
-                onClick={() => setModal({ open: true, type: "incoming", data: null })}
+                onClick={() =>
+                  setModal({ open: true, type: "incoming", data: null })
+                }
                 className="action-btn bg-yellow-500 hover:bg-yellow-600 focus:ring-2 focus:ring-yellow-300 text-white font-bold py-4 px-2 rounded-xl shadow-lg flex flex-col items-center gap-2 transition duration-200 text-base"
                 title="تسجيل عملية مرتجع"
               >
@@ -107,7 +113,9 @@ export default function InventoryPage() {
                 مرتجع
               </button>
               <button
-                onClick={() => setModal({ open: true, type: "damaged", data: null })}
+                onClick={() =>
+                  setModal({ open: true, type: "damaged", data: null })
+                }
                 className="action-btn bg-purple-600 hover:bg-purple-700 focus:ring-2 focus:ring-purple-400 text-white font-bold py-4 px-2 rounded-xl shadow-lg flex flex-col items-center gap-2 transition duration-200 text-base"
                 title="تسجيل عملية تالف"
               >
@@ -152,9 +160,15 @@ export default function InventoryPage() {
                   report={dailyReport.report}
                   during={dailyReport.during}
                   iconMap={{
-                    purchase: <FaCartPlus className="inline text-green-400 mr-1" />,
-                    outgoing: <FaArrowUp className="inline text-red-400 mr-1" />,
-                    incoming: <FaArrowDown className="inline text-yellow-400 mr-1" />,
+                    purchase: (
+                      <FaCartPlus className="inline text-green-400 mr-1" />
+                    ),
+                    outgoing: (
+                      <FaArrowUp className="inline text-red-400 mr-1" />
+                    ),
+                    incoming: (
+                      <FaArrowDown className="inline text-yellow-400 mr-1" />
+                    ),
                     damaged: <FaBan className="inline text-purple-400 mr-1" />,
                   }}
                 />
@@ -185,9 +199,23 @@ export default function InventoryPage() {
                       .toFixed(2)}{" "}
                     جنيه
                   </p>
+                  <hr />
+                  <div>
+                    <p className="text-gray-300">فرق المرتجع من التحميل</p>
+                    <p className="text-3xl font-bold text-red-400 mt-2">
+                      {dailyReport?.report
+                        ?.reduce((acc: number, r: any) => {
+                          const qty =
+                            dailyReport?.report?.find(
+                              (report: any) =>
+                                report.product._id === r.product._id
+                            )?.endQty || 0;
+                          return acc + "-" + qty;
+                        }, 0)}
+                    </p>
+                  </div>
                 </div>
               )}
-              
             </div>
           </div>
         </div>

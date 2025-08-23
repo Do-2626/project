@@ -1,4 +1,5 @@
 import React from "react";
+import ExportButtonCSV from "./ExportButtonCSV";
 
 interface DailyLogProps {
   report: any[];
@@ -21,9 +22,22 @@ const typeLabels: Record<string, string> = {
 export default function DailyLog({ report, during, iconMap }: DailyLogProps) {
   return (
     <div className="bg-gray-700 p-4 rounded-lg">
-      <h3 className="text-lg font-semibold mb-3 text-gray-200 border-b border-gray-600 pb-2">سجل عمليات اليوم</h3>
+      <h3 className="text-lg font-semibold mb-3 text-gray-200 border-b border-gray-600 pb-2">
+        سجل عمليات اليوم
+      </h3>
+
+
+      <ExportButtonCSV 
+        data={during} 
+        fileName={`daily-log-${new Date().toISOString().split('T')[0]}`}
+        label="تصدير السجل" 
+      />
+
+
       {during.length === 0 ? (
-        <div className="text-gray-500 text-center p-4">لا توجد عمليات مسجلة لهذا اليوم.</div>
+        <div className="text-gray-500 text-center p-4">
+          لا توجد عمليات مسجلة لهذا اليوم.
+        </div>
       ) : (
         <table className="w-full text-sm">
           <thead>
@@ -41,9 +55,9 @@ export default function DailyLog({ report, during, iconMap }: DailyLogProps) {
                   {iconMap && iconMap[t.type as keyof typeof iconMap]}
                   <span className="font-semibold">{typeLabels[t.type]}</span>
                 </td>
-                <td className="p-2">{t.productId?.name || ''}</td>
+                <td className="p-2">{t.productId?.name || ""}</td>
                 <td className="p-2">{t.quantity}</td>
-                <td className="p-2">{t.party || '-'}</td>
+                <td className="p-2">{t.party || "-"}</td>
               </tr>
             ))}
           </tbody>
