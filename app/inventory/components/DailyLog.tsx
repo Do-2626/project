@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import React, { useEffect, useState } from "react";
 import ExportButtonCSV from "../../../components/ExportButtonCSV";
@@ -200,11 +200,10 @@ export default function DailyLog({ report, during, iconMap }: DailyLogProps) {
       </h3>
 
       <ExportButtonCSV
-        data={during} 
-        fileName={`daily-log-${new Date().toISOString().split('T')[0]}`}
+        data={during}
+        fileName={`daily-log-${new Date().toISOString().split("T")[0]}`}
         label="تصدير السجل"
       />
-
 
       {during.length === 0 ? (
         <div className="text-gray-500 text-center p-4">
@@ -232,16 +231,6 @@ export default function DailyLog({ report, during, iconMap }: DailyLogProps) {
                 <td className="p-2">{t.quantity}</td>
                 <td className="p-2">{t.party || "-"}</td>
                 <td className="p-2 flex gap-2">
-                  <button
-                    onClick={() => {
-                      setSelectedTransaction(t);
-                      setShowEditModal(true);
-                    }}
-                    disabled={isLoading}
-                    className="bg-blue-600 hover:bg-blue-700 px-2 py-1 rounded disabled:opacity-50"
-                  >
-                    تعديل
-                  </button>
                   <button
                     onClick={() => handleDelete(t._id)}
                     disabled={isLoading}
