@@ -1,15 +1,16 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import InventoryTable from "@/components/InventoryTable";
+import InventoryTable from "@/app/inventory/components/InventoryTable";
 import Modal from "@/components/Modal";
 import Calendar from "@/components/Calendar";
-import DailyLog from "@/components/DailyLog";
+import DailyLog from "@/app/inventory/components/DailyLog";
 import PasswordPrompt from "@/components/PasswordPrompt";
 import dayjs from "dayjs";
 import { FaCartPlus, FaArrowUp, FaArrowDown, FaBan } from "react-icons/fa6";
+import { Product } from "./types";
 
 export default function InventoryPage() {
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [transactions, setTransactions] = useState([]);
   const [selectedDate, setSelectedDate] = useState(
     dayjs().format("YYYY-MM-DD")
@@ -37,9 +38,33 @@ export default function InventoryPage() {
     fetch(`/api/inventory/daily-report?date=${selectedDate}`)
       .then((res) => res.json())
       .then(setDailyReport);
-      console.log('dailyReport',dailyReport);
-
   }, [selectedDate, products, transactions]);
+  const handleUpdateProduct = async (updatedProduct: Product) => {
+    try {
+      const response = await fetch(
+        `/api/inventory/products?id=${updatedProduct._id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedProduct),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("فشل في تحديث المنتج");
+      }
+
+      const updatedData = await response.json();
+      setProducts((prev) =>
+        prev.map((p) => (p._id === updatedProduct._id ? updatedData : p))
+      );
+    } catch (error) {
+      console.error("Error updating product:", error);
+      throw error;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-blue-900 bg-fixed">
@@ -53,34 +78,6 @@ export default function InventoryPage() {
       </header>
       <main className="grid gap-8 font-cairo">
         <div className="lg:col-span-2 bg-gradient-to-br from-gray-800 via-gray-900 to-gray-800 p-6 rounded-2xl shadow-2xl border border-gray-700">
-          {/* <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <h2 className="text-2xl font-bold text-white drop-shadow font-cairo">
-              قائمة الأصناف
-            </h2>
-            <button
-              onClick={() =>
-                setModal({ open: true, type: "addProduct", data: null })
-              }
-              className="bg-blue-700 hover:bg-blue-800 focus:ring-2 focus:ring-blue-400 text-white font-bold py-2 px-6 rounded-xl shadow-lg transition duration-200 text-lg flex items-center gap-2 font-cairo"
-              title="إضافة صنف جديد"
-            >
-              <span className="inline-flex items-center gap-2">
-                <i className="fas fa-plus-circle"></i>
-                إضافة صنف جديد
-              </span>
-            </button>
-          </div> */}
-          {/* <div className="overflow-x-auto rounded-xl border border-gray-700 bg-gray-900 shadow-inner mb-8">
-            <InventoryTable
-              products={products}
-              transactions={transactions}
-              onAddProduct={() =>
-                setModal({ open: true, type: "addProduct", data: null })
-              }
-              showProtected={showProtected}
-            />
-          </div> */}
-
           <div className="bg-gradient-to-br from-gray-800 via-gray-900 to-gray-800 p-6 rounded-2xl shadow-2xl border border-gray-700">
             <h2 className="text-xl font-semibold mb-4 text-white drop-shadow">
               اليوم
@@ -200,18 +197,58 @@ export default function InventoryPage() {
                     جنيه
                   </p>
                   <hr />
+                  {/* إضافة صنف جديد */}
+                  <>
+                    <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                      <h2 className="text-2xl font-bold text-white drop-shadow font-cairo">
+                        قائمة الأصناف
+                      </h2>
+                      <button
+                        onClick={() =>
+                          setModal({
+                            open: true,
+                            type: "addProduct",
+                            data: null,
+                          })
+                        }
+                        className="bg-blue-700 hover:bg-blue-800 focus:ring-2 focus:ring-blue-400 text-white font-bold py-2 px-6 rounded-xl shadow-lg transition duration-200 text-lg flex items-center gap-2 font-cairo"
+                        title="إضافة صنف جديد"
+                      >
+                        <span className="inline-flex items-center gap-2">
+                          <i className="fas fa-plus-circle"></i>
+                          إضافة صنف جديد
+                        </span>
+                      </button>
+                    </div>
+                    <div className="overflow-x-auto rounded-xl border border-gray-700 bg-gray-900 shadow-inner mb-8">
+                      <InventoryTable
+                        products={products}
+                        transactions={transactions}
+                        onAddProduct={() =>
+                          setModal({
+                            open: true,
+                            type: "addProduct",
+                            data: null,
+                          })
+                        }
+                        showProtected={showProtected}
+                        dailyReport={dailyReport?.report} // تمرير بيانات التقرير اليومي هنا
+                        onUpdateProduct={handleUpdateProduct}
+                      />
+                    </div>
+                  </>
+                  <hr />
                   <div>
                     <p className="text-gray-300">فرق المرتجع من التحميل</p>
                     <p className="text-3xl font-bold text-red-400 mt-2">
-                      {dailyReport?.report
-                        ?.reduce((acc: number, r: any) => {
-                          const qty =
-                            dailyReport?.report?.find(
-                              (report: any) =>
-                                report.product._id === r.product._id
-                            )?.endQty || 0;
-                          return acc + "-" + qty;
-                        }, 0)}
+                      {dailyReport?.report?.reduce((acc: number, r: any) => {
+                        const qty =
+                          dailyReport?.report?.find(
+                            (report: any) =>
+                              report.product._id === r.product._id
+                          )?.endQty || 0;
+                        return acc + "-" + qty;
+                      }, 0)}
                     </p>
                   </div>
                 </div>
