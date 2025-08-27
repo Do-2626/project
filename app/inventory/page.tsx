@@ -156,6 +156,11 @@ export default function InventoryPage() {
                 <DailyLog
                   report={dailyReport.report}
                   during={dailyReport.during}
+                  onUpdateDuring={() => {
+                    fetch(`/api/inventory/daily-report?date=${selectedDate}`)
+                      .then((res) => res.json())
+                      .then(setDailyReport);
+                  }}
                   iconMap={{
                     purchase: (
                       <FaCartPlus className="inline text-green-400 mr-1" />

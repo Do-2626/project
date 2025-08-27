@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import ExportButtonCSV from "../../../components/ExportButtonCSV";
+import ExportButtonCSV from "@/components/ExportButtonCSV";
 
 interface Transaction {
   _id: string;
@@ -14,6 +14,7 @@ interface Transaction {
 interface DailyLogProps {
   report: any[];
   during: any;
+  onUpdateDuring: (updatedTransactions: any[]) => void; // إضافة الخاصية هنا
   iconMap?: {
     purchase?: React.ReactNode;
     outgoing?: React.ReactNode;
@@ -31,50 +32,17 @@ const typeLabels: Record<string, string> = {
 
 type NotificationType = "success" | "error";
 
-export default function DailyLog({ report, during, iconMap }: DailyLogProps) {
-  const [selectedTransaction, setSelectedTransaction] =
-    useState<Transaction | null>(null);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [formError, setFormError] = useState("");
+export default function DailyLog({
+  report,
+  during,
+  onUpdateDuring,
+  iconMap,
+}: DailyLogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [notification, setNotification] = useState<{
     type: NotificationType;
     message: string;
   } | null>(null);
-  const [transactions, setTransactions] = useState<Transaction[]>(during);
-
-  const handleUpdate = async (updatedTransaction: Transaction) => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(
-        `/api/transactions/${updatedTransaction._id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(updatedTransaction),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("فشل في التحديث");
-      }
-
-      setTransactions((prev) =>
-        prev.map((t) =>
-          t._id === updatedTransaction._id ? updatedTransaction : t
-        )
-      );
-      setShowEditModal(false);
-      setNotification({ type: "success", message: "تم تحديث البيانات بنجاح" });
-    } catch (error) {
-      setFormError("فشل في تحديث البيانات");
-      setNotification({ type: "error", message: "حدث خطأ أثناء التحديث" });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleDelete = async (id: string) => {
     const password = prompt("أدخل كلمة المرور:");
@@ -83,7 +51,7 @@ export default function DailyLog({ report, during, iconMap }: DailyLogProps) {
       return;
     }
 
-    if (password !== "admin123") {
+    if (password !== "123") {
       alert("كلمة المرور غير صحيحة");
       return;
     }
@@ -93,7 +61,10 @@ export default function DailyLog({ report, during, iconMap }: DailyLogProps) {
       await fetch(`/api/transactions/${id}`, {
         method: "DELETE",
       });
-      setTransactions((prev) => prev.filter((item) => item._id !== id));
+
+      // update during
+      onUpdateDuring(report);
+
       setNotification({ type: "success", message: "تم حذف العنصر بنجاح" });
     } catch (error) {
       setNotification({ type: "error", message: "فشل في حذف العنصر" });
@@ -120,78 +91,6 @@ export default function DailyLog({ report, during, iconMap }: DailyLogProps) {
           } text-white z-50`}
         >
           {notification.message}
-        </div>
-      )}
-
-      {showEditModal && selectedTransaction && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 p-6 rounded-lg w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">تعديل العملية</h3>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">الصنف</label>
-                <input
-                  type="text"
-                  defaultValue={selectedTransaction.productId?.name || ""}
-                  className="w-full bg-gray-700 border border-gray-600 rounded p-2"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">الكمية</label>
-                <input
-                  type="number"
-                  defaultValue={selectedTransaction.quantity}
-                  className="w-full bg-gray-700 border border-gray-600 rounded p-2"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">النوع</label>
-                <select
-                  defaultValue={selectedTransaction.type}
-                  className="w-full bg-gray-700 border border-gray-600 rounded p-2"
-                >
-                  {Object.entries(typeLabels).map(([key, label]) => (
-                    <option key={key} value={key}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">الجهة</label>
-                <input
-                  type="text"
-                  defaultValue={selectedTransaction.party || ""}
-                  className="w-full bg-gray-700 border border-gray-600 rounded p-2"
-                />
-              </div>
-            </div>
-
-            {formError && (
-              <div className="text-red-500 text-sm mt-2">{formError}</div>
-            )}
-
-            <div className="flex justify-end gap-2 mt-4">
-              <button
-                onClick={() => setShowEditModal(false)}
-                disabled={isLoading}
-                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded disabled:opacity-50"
-              >
-                إلغاء
-              </button>
-              <button
-                onClick={() => handleUpdate(selectedTransaction)}
-                disabled={isLoading}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded disabled:opacity-50"
-              >
-                {isLoading ? "جاري التحديث..." : "حفظ التغييرات"}
-              </button>
-            </div>
-          </div>
         </div>
       )}
 
