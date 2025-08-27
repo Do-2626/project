@@ -123,8 +123,24 @@ export default function InventoryPage() {
           </div>
           <div className="space-y-8">
             <div className="bg-gray-700 p-4 rounded-xl mt-6 shadow-inner border border-gray-600">
-              <h3 className="text-lg font-semibold mb-3 text-gray-200 border-b border-gray-600 pb-2">
+              <h3 className="flex justify-between items-center text-lg font-semibold mb-3 text-gray-200 border-b border-gray-600 pb-2">
                 حالة المخزون
+                <button
+                  onClick={() =>
+                    setModal({
+                      open: true,
+                      type: "addProduct",
+                      data: null,
+                    })
+                  }
+                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded transition"
+                  title="إضافة صنف جديد"
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <i className="fas fa-plus-circle"></i>
+                    إضافة صنف جديد
+                  </span>
+                </button>
               </h3>
               <table className="w-full text-sm">
                 <thead className="bg-gray-800 sticky top-0 z-10">

@@ -94,15 +94,16 @@ export default function DailyLog({
         </div>
       )}
 
-      <h3 className="text-lg font-semibold mb-3 text-gray-200 border-b border-gray-600 pb-2">
+      <h3 className="flex justify-between items-center text-lg font-semibold mb-3 text-gray-200 border-b border-gray-600 pb-2">
         سجل عمليات اليوم
-      </h3>
-
-      <ExportButtonCSV
+        <ExportButtonCSV
         data={during}
         fileName={`daily-log-${new Date().toISOString().split("T")[0]}`}
         label="تصدير السجل"
       />
+      </h3>
+
+      
 
       {during.length === 0 ? (
         <div className="text-gray-500 text-center p-4">
