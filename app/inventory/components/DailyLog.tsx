@@ -97,13 +97,11 @@ export default function DailyLog({
       <h3 className="flex justify-between items-center text-lg font-semibold mb-3 text-gray-200 border-b border-gray-600 pb-2">
         سجل عمليات اليوم
         <ExportButtonCSV
-        data={during}
-        fileName={`daily-log-${new Date().toISOString().split("T")[0]}`}
-        label="تصدير السجل"
-      />
+          data={during}
+          fileName={`daily-log-${new Date().toISOString().split("T")[0]}`}
+          label="تصدير السجل"
+        />
       </h3>
-
-      
 
       {during.length === 0 ? (
         <div className="text-gray-500 text-center p-4">
@@ -131,13 +129,15 @@ export default function DailyLog({
                 <td className="p-2">{t.quantity}</td>
                 <td className="p-2">{t.party || "-"}</td>
                 <td className="p-2 flex gap-2">
-                  <button
-                    onClick={() => handleDelete(t._id)}
-                    disabled={isLoading}
-                    className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded disabled:opacity-50"
-                  >
-                    {isLoading ? "جاري الحذف..." : "حذف"}
-                  </button>
+                  {t.type !== "purchase" && (
+                    <button
+                      onClick={() => handleDelete(t._id)}
+                      disabled={isLoading}
+                      className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded disabled:opacity-50"
+                    >
+                      {isLoading ? "جاري الحذف..." : "حذف"}
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

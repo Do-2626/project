@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   await dbConnect();
   const { searchParams } = new URL(req.url!);
   const date = searchParams.get('date');
-  if (!date) return NextResponse.json({ error: 'date required' }, { status: 400 });
+  // if (!date) return NextResponse.json({ error: 'date required' }, { status: 400 });
 
   // جميع المنتجات
   const products = await Product.find({});
