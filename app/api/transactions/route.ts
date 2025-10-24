@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Transaction from '@/models/Transaction';
+import FinancialTransaction from '@/models/FinancialTransaction'; // Import FinancialTransaction model
 import { dbConnect } from '@/lib/mongoose';
 
 export async function GET(req: NextRequest) {
@@ -16,5 +17,18 @@ export async function POST(req: NextRequest) {
   await dbConnect();
   const body = await req.json();
   const transaction = await Transaction.create(body);
+
+  if (body.type === 'purchase') {
+    await FinancialTransaction.create({
+      type: 'purchase',
+      amount: body.amount,
+      category: 'المشتريات',
+      date: body.date,
+      party: body.party,
+      productId: body.productId,
+      quantity: body.quantity,
+    });
+  }
+
   return NextResponse.json(transaction, { status: 201 });
 }

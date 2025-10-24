@@ -111,9 +111,19 @@ export default function InventoryPage() {
               </button>
               <button
                 onClick={() =>
+                  setModal({ open: true, type: "purchase", data: null })
+                }
+                className="action-btn bg-green-600 hover:bg-green-700 focus:ring-2 focus:ring-green-400 text-white font-bold py-4 px-2 rounded-xl shadow-lg flex flex-col items-center gap-2 transition duration-200 text-base"
+                title="تسجيل عملية شراء"
+              >
+                <FaCartPlus className="mb-1" />
+                شراء
+              </button>
+              <button
+                onClick={() =>
                   setModal({ open: true, type: "damaged", data: null })
                 }
-                className="action-btn bg-purple-600 hover:bg-purple-700 focus:ring-2 focus:ring-purple-400 text-white font-bold py-4 px-2 rounded-xl shadow-lg flex flex-col items-center gap-2 transition duration-200 text-base"
+                className="action-btn bg-purple-600 hover:bg-purple-700 focus:ring-2 focus:ring-400 text-white font-bold py-4 px-2 rounded-xl shadow-lg flex flex-col items-center gap-2 transition duration-200 text-base"
                 title="تسجيل عملية تالف"
               >
                 <FaBan className="mb-1" />
