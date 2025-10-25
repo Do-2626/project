@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import PasswordPrompt from "./PasswordPrompt";
 
-export default function Modal({ open, type, onClose, onSuccess, products, selectedDate }: any) {
+export default function Modal({ open, type, onClose, onSuccess, products, selectedDate, transactionId, onDeleteConfirm }: any) {
   const [form, setForm] = useState<any>({});
   const [showPassword, setShowPassword] = useState(false);
   if (!open) return null;
@@ -23,7 +23,7 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
           sellingPrice: Number(form.sellingPrice),
         }),
       });
-    } else {
+    } else if (type !== "delete") {
       const transactionBody: any = {
         productId: form.productId,
         quantity: Number(form.quantity),
@@ -114,6 +114,28 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
     } else {
       body = addProductFields;
     }
+  } else if (type === "delete") {
+    body = (
+      <div className="text-white text-center">
+        <p className="mb-4">هل أنت متأكد أنك تريد حذف هذه العملية؟</p>
+        <div className="flex justify-center gap-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg transition duration-300"
+          >
+            إلغاء
+          </button>
+          <button
+            type="button"
+            onClick={() => onDeleteConfirm(transactionId)}
+            className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg transition duration-300"
+          >
+            تأكيد الحذف
+          </button>
+        </div>
+      </div>
+    );
   } else {
     body = transactionFields;
   }
@@ -122,16 +144,20 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 overflow-y-auto">
       <div className="bg-gray-800 rounded-lg shadow-xl w-[95%] max-w-[500px] p-4 mx-2 modal-content scale-95">
         <div className="flex justify-between items-center border-b border-gray-700 pb-3 mb-4">
-          <h3 className="text-xl font-semibold">{type === "addProduct" ? "إضافة صنف جديد" : "تسجيل عملية"}</h3>
+          <h3 className="text-xl font-semibold">{type === "addProduct" ? "إضافة صنف جديد" : type === "delete" ? "تأكيد الحذف" : "تسجيل عملية"}</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-white">&times;</button>
         </div>
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4">{body}</div>
-          <div className="flex justify-end gap-4 pt-4 mt-4 border-t border-gray-700">
-            <button type="button" onClick={onClose} className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg transition duration-300">إلغاء</button>
-            <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition duration-300" disabled={type === "addProduct" && !showPassword}>حفظ</button>
-          </div>
-        </form>
+        {type !== "delete" ? (
+          <form onSubmit={handleSubmit}>
+            <div className="space-y-4">{body}</div>
+            <div className="flex justify-end gap-4 pt-4 mt-4 border-t border-gray-700">
+              <button type="button" onClick={onClose} className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg transition duration-300">إلغاء</button>
+              <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition duration-300" disabled={type === "addProduct" && !showPassword}>حفظ</button>
+            </div>
+          </form>
+        ) : (
+          body
+        )}
       </div>
     </div>
   );

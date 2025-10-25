@@ -32,3 +32,25 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json(transaction, { status: 201 });
 }
+
+export async function DELETE(req: NextRequest) {
+  await dbConnect();
+  const { pathname } = new URL(req.url);
+  const id = pathname.split('/').pop();
+
+  if (!id) {
+    return NextResponse.json({ message: 'Transaction ID is required' }, { status: 400 });
+  }
+
+  const deletedTransaction = await Transaction.findByIdAndDelete(id);
+
+  if (!deletedTransaction) {
+    return NextResponse.json({ message: 'Transaction not found' }, { status: 404 });
+  }
+
+  if (deletedTransaction.type === 'purchase') {
+    await FinancialTransaction.deleteOne({ productId: deletedTransaction.productId, quantity: deletedTransaction.quantity, date: deletedTransaction.date });
+  }
+
+  return NextResponse.json({ message: 'Transaction deleted successfully' }, { status: 200 });
+}

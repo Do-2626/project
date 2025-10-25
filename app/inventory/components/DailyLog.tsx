@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import ExportButtonCSV from "@/components/ExportButtonCSV";
+import Modal from "@/components/Modal";
 
 interface Transaction {
   _id: string;
@@ -43,27 +44,30 @@ export default function DailyLog({
     type: NotificationType;
     message: string;
   } | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalType, setModalType] = useState("");
+  const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
 
-  const handleDelete = async (id: string) => {
-    const password = prompt("أدخل كلمة المرور:");
-    if (!password) {
-      alert("يجب إدخال كلمة مرور");
-      return;
-    }
+  const handleDeleteClick = (id: string) => {
+    setSelectedTransactionId(id);
+    setModalType("delete");
+    setIsModalOpen(true);
+  };
 
-    if (password !== "123") {
-      alert("كلمة المرور غير صحيحة");
-      return;
-    }
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedTransactionId(null);
+  };
 
+  const handleDeleteConfirm = async (id: string) => {
+    setIsModalOpen(false);
     setIsLoading(true);
     try {
       await fetch(`/api/transactions/${id}`, {
         method: "DELETE",
       });
 
-      // update during
-      onUpdateDuring(report);
+      onUpdateDuring(report.filter((t: Transaction) => t._id !== id));
 
       setNotification({ type: "success", message: "تم حذف العنصر بنجاح" });
     } catch (error) {
@@ -129,21 +133,31 @@ export default function DailyLog({
                 <td className="p-2">{t.quantity}</td>
                 <td className="p-2">{t.party || "-"}</td>
                 <td className="p-2 flex gap-2">
-                  {t.type !== "purchase" && (
+                  {/* {t.type !== "purchase" && ( */}
                     <button
-                      onClick={() => handleDelete(t._id)}
+                      onClick={() => handleDeleteClick(t._id)}
                       disabled={isLoading}
                       className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded disabled:opacity-50"
                     >
                       {isLoading ? "جاري الحذف..." : "حذف"}
                     </button>
-                  )}
+                  {/* )} */}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
+      <Modal
+        open={isModalOpen}
+        type={modalType}
+        onClose={handleModalClose}
+        onSuccess={() => {}}
+        products={[]}
+        selectedDate={null}
+        transactionId={selectedTransactionId}
+        onDeleteConfirm={handleDeleteConfirm}
+      />
     </div>
   );
 }
