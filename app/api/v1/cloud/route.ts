@@ -18,26 +18,26 @@ export async function OPTIONS(request: NextRequest) {
 
 // Authentication middleware
 function checkAuth(request: NextRequest) {
-  const authHeader = request.headers.get("Authorization");
+  // const authHeader = request.headers.get("Authorization");
   
-  // If API key is set in environment variables, require authentication
-  const API_KEY = process.env.API_KEY;
-  if (API_KEY) {
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json(
-        { error: "مطلوب مصادقة" },
-        { status: 401, headers: corsHeaders }
-      );
-    }
+  // // If API key is set in environment variables, require authentication
+  // const API_KEY = process.env.API_KEY;
+  // if (API_KEY) {
+  //   if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  //     return NextResponse.json(
+  //       { error: "مطلوب مصادقة" },
+  //       { status: 401, headers: corsHeaders }
+  //     );
+  //   }
     
-    const token = authHeader.substring(7); // Remove "Bearer " prefix
-    if (token !== API_KEY) {
-      return NextResponse.json(
-        { error: "رمز المصادقة غير صحيح" },
-        { status: 401, headers: corsHeaders }
-      );
-    }
-  }
+  //   const token = authHeader.substring(7); // Remove "Bearer " prefix
+  //   if (token !== API_KEY) {
+  //     return NextResponse.json(
+  //       { error: "رمز المصادقة غير صحيح" },
+  //       { status: 401, headers: corsHeaders }
+  //     );
+  //   }
+  // }
   
   return null;
 }
