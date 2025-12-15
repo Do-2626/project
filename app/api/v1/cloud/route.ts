@@ -1,6 +1,63 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongoose";
 
+// Data validation functions
+const validators = {
+  // Validate product structure
+  validateProduct: (product: any): boolean => {
+    return (
+      product &&
+      typeof product === 'object' &&
+      (product.id !== undefined || product.name !== undefined) &&
+      (product.price === undefined || typeof product.price === 'number') &&
+      (product.initialStock === undefined || typeof product.initialStock === 'number')
+    );
+  },
+  
+  // Validate branch structure  
+  validateBranch: (branch: any): boolean => {
+    return (
+      branch &&
+      typeof branch === 'object' &&
+      typeof branch.name === 'string' &&
+      branch.name.trim().length > 0
+    );
+  },
+  
+  // Validate sale transaction
+  validateSale: (sale: any): boolean => {
+    return (
+      sale &&
+      typeof sale === 'object' &&
+      Array.isArray(sale.items) &&
+      sale.items.every((item: any) => 
+        item && 
+        typeof item === 'object' &&
+        (item.productId !== undefined || item.productName !== undefined) &&
+        typeof item.quantity === 'number' &&
+        item.quantity > 0
+      ) &&
+      (sale.total === undefined || typeof sale.total === 'number') &&
+      (sale.branch === undefined || typeof sale.branch === 'string')
+    );
+  },
+  
+  // Validate array of specific type
+   validateArray: (array: any[], validator: (item: any) => boolean): boolean => {
+     return Array.isArray(array) && array.every(validator);
+   },
+   
+   // Validate sync delta structure
+   validateDelta: (delta: any): boolean => {
+     return (
+       delta &&
+       typeof delta === 'object' &&
+       typeof delta.timestamp === 'number' &&
+       (delta.operations === undefined || Array.isArray(delta.operations))
+     );
+   }
+ };
+
 // CORS headers configuration
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -88,16 +145,92 @@ export async function POST(request: NextRequest) {
 
   try {
     const dataToUpdate = await request.json();
+    
+    // Validate incoming data structure
+    if (!dataToUpdate || typeof dataToUpdate !== 'object') {
+      return NextResponse.json(
+        { error: "بيانات غير صحيحة" },
+        { status: 400, headers: corsHeaders }
+      );
+    }
+    
+    // Validate specific data types if provided (ignore fields starting with _)
+    for (const [key, value] of Object.entries(dataToUpdate)) {
+      if (key.startsWith('_')) continue; // Skip internal fields
+      
+      if (key === 'products' && !validators.validateArray(value as any[], validators.validateProduct)) {
+        return NextResponse.json(
+          { error: "هيكل المنتجات غير صحيح" },
+          { status: 400, headers: corsHeaders }
+        );
+      }
+      
+      if (key === 'branches' && !validators.validateArray(value as any[], validators.validateBranch)) {
+        return NextResponse.json(
+          { error: "هيكل الفروع غير صحيح" },
+          { status: 400, headers: corsHeaders }
+        );
+      }
+      
+      if (key === 'sales_main' && !validators.validateArray(value as any[], validators.validateSale)) {
+        return NextResponse.json(
+          { error: "هيكل المبيعات غير صحيح" },
+          { status: 400, headers: corsHeaders }
+        );
+      }
+    }
+    
     const dataCollection = db.collection("cloud_data");
+    
+    // Check if this is a delta sync (contains _lastSync field)
+    const isDeltaSync = dataToUpdate._lastSync !== undefined;
+    const syncTimestamp = Date.now();
     
     // Prepare bulk write operations for all keys
     const operations = [];
     
     for (const [key, value] of Object.entries(dataToUpdate)) {
+      // Skip internal fields used for delta sync
+      if (key.startsWith('_')) continue;
+      
+      // For arrays (products, branches, sales_main), use $addToSet to merge instead of replace
+      if (Array.isArray(value)) {
+        operations.push({
+          updateOne: {
+            filter: { _id: key },
+            update: { 
+              $addToSet: { 
+                value: { $each: value }
+              }
+            },
+            upsert: true,
+          },
+        });
+      } else {
+        // For non-array data, use $set as before
+        operations.push({
+          updateOne: {
+            filter: { _id: key },
+            update: { $set: { value: value } },
+            upsert: true,
+          },
+        });
+      }
+    }
+    
+    // Add sync metadata for delta sync
+    if (isDeltaSync) {
       operations.push({
         updateOne: {
-          filter: { _id: key },
-          update: { $set: { value: value } },
+          filter: { _id: "_syncMetadata" },
+          update: { 
+            $set: { 
+              value: {
+                lastSync: syncTimestamp,
+                lastDeltaSync: dataToUpdate._lastSync
+              }
+            }
+          },
           upsert: true,
         },
       });
