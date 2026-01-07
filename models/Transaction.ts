@@ -8,6 +8,7 @@ const TransactionSchema = new Schema({
   date: { type: String, required: true }, // YYYY-MM-DD
   amount: { type: Number }, // المبلغ المالي
   category: { type: String }, // تصنيف المعاملة
+  branchId: { type: Types.ObjectId, ref: 'Branch' }, // مرجع للفرع
   isRecurring: { type: Boolean, default: false }, // معاملة متكررة
   createdAt: { type: Date, default: Date.now }
 });

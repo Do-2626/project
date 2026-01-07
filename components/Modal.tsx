@@ -1,13 +1,36 @@
 import React, { useState } from "react";
 import PasswordPrompt from "./PasswordPrompt";
+import BulkTransactionTable from "@/app/inventory/components/BulkTransactionTable";
 
-export default function Modal({ open, type, onClose, onSuccess, products, selectedDate, transactionId, onDeleteConfirm }: any) {
+export default function Modal({ open, type, onClose, onSuccess, products, selectedDate, transactionId, onDeleteConfirm, dailyReport }: any) {
   const [form, setForm] = useState<any>({});
   const [showPassword, setShowPassword] = useState(false);
+  const [branches, setBranches] = useState<any[]>([]);
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
+
+  // جلب الفروع عند فتح النافذة
+  React.useEffect(() => {
+    if (open) {
+      setQuantities({});
+      setForm({});
+      fetch("/api/branches")
+        .then((res) => res.json())
+        .then((data) => setBranches(data))
+        .catch((err) => console.error("Failed to fetch branches", err));
+    }
+  }, [open]);
+
   if (!open) return null;
 
   const handleChange = (e: any) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleQuantityChange = (productId: string, quantity: number) => {
+    setQuantities((prev) => ({
+      ...prev,
+      [productId]: quantity,
+    }));
   };
 
   const handleSubmit = async (e: any) => {
@@ -24,22 +47,42 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
         }),
       });
     } else if (type !== "delete") {
-      const transactionBody: any = {
-        productId: form.productId,
-        quantity: Number(form.quantity),
-        type,
-        party: form.party,
-        date: selectedDate,
-      };
+      // إعداد البيانات للإرسال الجماعي
+      const transactionsToSubmit = [];
+      const branchName = form.branchId 
+        ? branches.find(b => b._id === form.branchId)?.name 
+        : form.party;
 
-      if (type === "purchase") {
-        transactionBody.amount = Number(form.amount);
+      for (const [productId, quantity] of Object.entries(quantities)) {
+        if (quantity > 0) {
+          const product = products.find((p: any) => p._id === productId);
+          const transaction: any = {
+            productId,
+            quantity,
+            type,
+            party: branchName, // استخدام اسم الفرع كجهة
+            branchId: form.branchId,
+            date: selectedDate,
+          };
+          
+          if (type === "purchase" && product) {
+             // حساب المبلغ تلقائياً للمشتريات (الكمية * سعر الشراء)
+             transaction.amount = quantity * (product.purchasePrice || 0);
+          }
+          
+          transactionsToSubmit.push(transaction);
+        }
+      }
+
+      if (transactionsToSubmit.length === 0) {
+        alert("يرجى إدخال كمية لمنتج واحد على الأقل");
+        return;
       }
 
       await fetch("/api/transactions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(transactionBody),
+        body: JSON.stringify(transactionsToSubmit),
       });
     }
     onSuccess();
@@ -75,29 +118,48 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
   // حقول العمليات
   const transactionFields = (
     <>
-      <div>
-        <label className="block mb-2 text-sm font-medium text-gray-300">اختر الصنف</label>
-        <select name="productId" onChange={handleChange} className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5" required>
-          <option value="">اختر</option>
-          {products.map((p: any) => (
-            <option key={p._id} value={p._id}>{p.name}</option>
-          ))}
-        </select>
-      </div>
-      <div>
-        <label className="block mb-2 text-sm font-medium text-gray-300">الكمية</label>
-        <input name="quantity" type="number" min="1" onChange={handleChange} className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5" required />
-      </div>
-      {type === "purchase" && (
-        <div>
-          <label className="block mb-2 text-sm font-medium text-gray-300">المبلغ</label>
-          <input name="amount" type="number" step="0.01" onChange={handleChange} className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5" required />
+      {/* اختيار الفرع أو الجهة - مشترك لجميع العمليات */}
+      {(type === "outgoing" || type === "incoming" || type === "damaged" || type === "purchase") ? (
+        <div className="mb-4">
+          <label className="block mb-2 text-sm font-medium text-gray-300">الفرع / الجهة</label>
+          <select 
+            name="branchId" 
+            onChange={handleChange} 
+            className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5"
+            required={type !== "purchase"} // الشراء قد لا يكون من فرع
+          >
+            <option value="">اختر الفرع</option>
+            {branches.map((branch) => (
+              <option key={branch._id} value={branch._id}>
+                {branch.name}
+              </option>
+            ))}
+          </select>
+           {/* خيار إدخال يدوي للجهة في حالة الشراء أو إذا لم يكن فرعاً */}
+           {!form.branchId && (
+            <input 
+              name="party" 
+              onChange={handleChange} 
+              className="mt-2 bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5" 
+              placeholder="أو أدخل اسم الجهة يدوياً" 
+            />
+           )}
+        </div>
+      ) : (
+        <div className="mb-4">
+          <label className="block mb-2 text-sm font-medium text-gray-300">الجهة (المورد/المندوب/سبب التلف...)</label>
+          <input name="party" onChange={handleChange} className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5" placeholder="اسم الجهة (اختياري)" />
         </div>
       )}
-      <div>
-        <label className="block mb-2 text-sm font-medium text-gray-300">الجهة (المورد/المندوب/سبب التلف...)</label>
-        <input name="party" onChange={handleChange} className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5" placeholder="اسم الجهة (اختياري)" />
-      </div>
+
+      {/* جدول المنتجات للإدخال الجماعي */}
+      <BulkTransactionTable 
+        products={products}
+        dailyReport={dailyReport}
+        type={type}
+        quantities={quantities}
+        onQuantityChange={handleQuantityChange}
+      />
     </>
   );
 
@@ -142,7 +204,7 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-gray-800 rounded-lg shadow-xl w-[95%] max-w-[500px] p-4 mx-2 modal-content scale-95">
+      <div className={`bg-gray-800 rounded-lg shadow-xl w-[95%] ${type === 'delete' || type === 'addProduct' ? 'max-w-[500px]' : 'max-w-4xl'} p-4 mx-2 modal-content scale-95`}>
         <div className="flex justify-between items-center border-b border-gray-700 pb-3 mb-4">
           <h3 className="text-xl font-semibold">{type === "addProduct" ? "إضافة صنف جديد" : type === "delete" ? "تأكيد الحذف" : "تسجيل عملية"}</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-white">&times;</button>

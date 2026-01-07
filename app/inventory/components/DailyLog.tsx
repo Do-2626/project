@@ -10,6 +10,7 @@ interface Transaction {
   quantity: number;
   type: string;
   party?: string;
+  branchId?: { name: string }; // إضافة الفرع
 }
 
 interface DailyLogProps {
@@ -131,7 +132,15 @@ export default function DailyLog({
                 </td>
                 <td className="p-2">{t.productId?.name || ""}</td>
                 <td className="p-2">{t.quantity}</td>
-                <td className="p-2">{t.party || "-"}</td>
+                <td className="p-2">
+                  {t.branchId?.name ? (
+                    <span className="bg-blue-900 text-blue-200 px-2 py-1 rounded text-xs">
+                      {t.branchId.name}
+                    </span>
+                  ) : (
+                    t.party || "-"
+                  )}
+                </td>
                 <td className="p-2 flex gap-2">
                   {/* {t.type !== "purchase" && ( */}
                     <button

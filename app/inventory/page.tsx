@@ -306,6 +306,7 @@ export default function InventoryPage() {
         }}
         products={products}
         selectedDate={selectedDate}
+        dailyReport={dailyReport?.report}
       />
     </div>
   );

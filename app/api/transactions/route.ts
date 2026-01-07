@@ -9,13 +9,44 @@ export async function GET(req: NextRequest) {
   const date = searchParams.get('date');
   let filter: any = {};
   if (date) filter.date = date;
-  const transactions = await Transaction.find(filter).populate('productId');
+  const transactions = await Transaction.find(filter).populate('productId').populate('branchId');
   return NextResponse.json(transactions);
 }
 
 export async function POST(req: NextRequest) {
   await dbConnect();
   const body = await req.json();
+
+  // التحقق مما إذا كان الطلب عبارة عن مصفوفة (Bulk Insert)
+  if (Array.isArray(body)) {
+    try {
+      const results = [];
+      for (const item of body) {
+        const transaction = await Transaction.create(item);
+        
+        // إنشاء قيد مالي إذا كانت عملية شراء
+        if (item.type === 'purchase') {
+          await FinancialTransaction.create({
+            type: 'purchase',
+            amount: item.amount,
+            category: 'المشتريات',
+            date: item.date,
+            party: item.party,
+            branchId: item.branchId,
+            productId: item.productId,
+            quantity: item.quantity,
+          });
+        }
+        results.push(transaction);
+      }
+      return NextResponse.json(results, { status: 201 });
+    } catch (error) {
+      console.error("Bulk insert error:", error);
+      return NextResponse.json({ error: "Failed to process bulk transactions" }, { status: 500 });
+    }
+  }
+
+  // المعالجة الفردية (للتوافق مع الكود القديم إذا لزم الأمر)
   const transaction = await Transaction.create(body);
 
   if (body.type === 'purchase') {
@@ -25,6 +56,7 @@ export async function POST(req: NextRequest) {
       category: 'المشتريات',
       date: body.date,
       party: body.party,
+      branchId: body.branchId,
       productId: body.productId,
       quantity: body.quantity,
     });
