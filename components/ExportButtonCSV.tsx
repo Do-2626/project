@@ -17,28 +17,46 @@ export default function ExportButtonCSV({
   const handleExport = () => {
     if (!data || !data.length) return;
 
-    // Check if any key in the first data object contains "party"
-    if (Object.keys(data[0]).some(key => key.includes("party"))) {
-      data.forEach((item) => {
-        if (item.productId?.name) {
-          item["productName"] = item.productId.name;
-        }
-      });
-    }
+    const typeLabels: Record<string, string> = {
+      purchase: "مشتريات",
+      outgoing: "تحميل",
+      incoming: "مرتجع",
+      damaged: "تالف",
+      sale: "بيع",
+    };
 
-    // استخراج رؤوس الأعمدة من أول عنصر في البيانات
-    const headers = Object.keys(data[0]);
+    // تجهيز البيانات بشكل منظم للأعمدة
+    const processedData = data.map((item) => {
+      // إذا كانت المعاملة تحتوي على منتج، نستخرج اسمه
+      const productName = item.productId?.name || item.productName || "";
+      const branchName = item.branchId?.name || item.party || "-";
+      const typeLabel = typeLabels[item.type] || item.type || "";
 
-    // تحويل البيانات إلى صفوف CSV
+      return {
+        "التاريخ": item.date || "",
+        "النوع": typeLabel,
+        "الصنف": productName,
+        "الكمية": item.quantity || 0,
+        "الجهة/الفرع": branchName,
+        "المبلغ": item.amount || 0,
+      };
+    });
+
+    // استخراج رؤوس الأعمدة باللغة العربية
+    const headers = Object.keys(processedData[0]);
+
+    // تحويل البيانات إلى صفوف CSV باستخدام الفاصلة المنقوطة لتوافق أفضل مع Excel
+    const delimiter = ";";
     const csvRows = [
-      headers.join(","), // صف العناوين
-      ...data.map((row) =>
+      headers.join(delimiter), // صف العناوين
+      ...processedData.map((row: any) =>
         headers
           .map((fieldName) => {
-            const escaped = ("" + row[fieldName]).replace(/"/g, '""'); // الهروب من علامات الاقتباس
+            const value = row[fieldName] === undefined || row[fieldName] === null ? "" : row[fieldName];
+            const escaped = ("" + value).replace(/"/g, '""'); // الهروب من علامات الاقتباس
             return `"${escaped}"`; // إحاطة كل قيمة بعلامات اقتباس
           })
-          .join(",")
+          .join(delimiter)
       ),
     ];
 

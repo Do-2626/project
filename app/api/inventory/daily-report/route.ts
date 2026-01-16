@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Transaction from '@/models/Transaction';
 import Product from '@/models/Product';
+import Branch from '@/models/Branch';
 import { dbConnect } from '@/lib/mongoose';
 
 // احسب حالة المخزون في بداية ونهاية اليوم
@@ -22,11 +23,12 @@ export async function GET(req: NextRequest) {
       outgoing: { $sum: { $cond: [{ $eq: ['$type', 'outgoing'] }, '$quantity', 0] } },
       incoming: { $sum: { $cond: [{ $eq: ['$type', 'incoming'] }, '$quantity', 0] } },
       damaged: { $sum: { $cond: [{ $eq: ['$type', 'damaged'] }, '$quantity', 0] } },
+      sale: { $sum: { $cond: [{ $eq: ['$type', 'sale'] }, '$quantity', 0] } },
     } }
   ]);
 
   // العمليات خلال اليوم
-  const during = await Transaction.find({ date }).populate('productId');
+  const during = await Transaction.find({ date }).populate('productId').populate('branchId');
 
   // العمليات حتى نهاية اليوم (<= هذا اليوم)
   const after = await Transaction.aggregate([
@@ -37,6 +39,7 @@ export async function GET(req: NextRequest) {
       outgoing: { $sum: { $cond: [{ $eq: ['$type', 'outgoing'] }, '$quantity', 0] } },
       incoming: { $sum: { $cond: [{ $eq: ['$type', 'incoming'] }, '$quantity', 0] } },
       damaged: { $sum: { $cond: [{ $eq: ['$type', 'damaged'] }, '$quantity', 0] } },
+      sale: { $sum: { $cond: [{ $eq: ['$type', 'sale'] }, '$quantity', 0] } },
     } }
   ]);
 
@@ -46,12 +49,12 @@ export async function GET(req: NextRequest) {
 
   // بناء تقرير لكل منتج
   const report = products.map(prod => {
-    const b = beforeMap[prod._id] || { purchase: 0, outgoing: 0, incoming: 0, damaged: 0 };
-    const a = afterMap[prod._id] || { purchase: 0, outgoing: 0, incoming: 0, damaged: 0 };
+    const b = beforeMap[prod._id] || { purchase: 0, outgoing: 0, incoming: 0, damaged: 0, sale: 0 };
+    const a = afterMap[prod._id] || { purchase: 0, outgoing: 0, incoming: 0, damaged: 0, sale: 0 };
     return {
       product: prod,
-      startQty: (b.purchase + b.incoming) - (b.outgoing + b.damaged),
-      endQty: (a.purchase + a.incoming) - (a.outgoing + a.damaged)
+      startQty: (b.purchase + b.incoming) - (b.outgoing + b.damaged + b.sale),
+      endQty: (a.purchase + a.incoming) - (a.outgoing + a.damaged + a.sale)
     };
   });
 

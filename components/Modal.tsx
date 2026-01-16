@@ -7,11 +7,13 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
   const [showPassword, setShowPassword] = useState(false);
   const [branches, setBranches] = useState<any[]>([]);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [amounts, setAmounts] = useState<Record<string, number>>({});
 
   // جلب الفروع عند فتح النافذة
   React.useEffect(() => {
     if (open) {
       setQuantities({});
+      setAmounts({});
       setForm({});
       fetch("/api/branches")
         .then((res) => res.json())
@@ -30,6 +32,24 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
     setQuantities((prev) => ({
       ...prev,
       [productId]: quantity,
+    }));
+
+    // تحديث السعر تلقائياً إذا كان بيعاً
+    if (type === "sale") {
+      const product = products.find((p: any) => p._id === productId);
+      if (product && product.sellingPrice) {
+        setAmounts((prev) => ({
+          ...prev,
+          [productId]: quantity * product.sellingPrice,
+        }));
+      }
+    }
+  };
+
+  const handleAmountChange = (productId: string, amount: number) => {
+    setAmounts((prev) => ({
+      ...prev,
+      [productId]: amount,
     }));
   };
 
@@ -68,6 +88,16 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
           if (type === "purchase" && product) {
              // حساب المبلغ تلقائياً للمشتريات (الكمية * سعر الشراء)
              transaction.amount = quantity * (product.purchasePrice || 0);
+          } else if (type === "sale" && product) {
+             // استخدام المبلغ المدخل يدوياً أو الحساب التلقائي كاحتياطي
+             transaction.amount = amounts[productId] !== undefined && amounts[productId] !== 0
+               ? amounts[productId]
+               : quantity * (product.sellingPrice || 0);
+             
+             // تنبيه إذا كان السعر صفراً
+             if (transaction.amount === 0) {
+               console.warn(`Product ${product.name} has no amount defined.`);
+             }
           }
           
           transactionsToSubmit.push(transaction);
@@ -119,14 +149,14 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
   const transactionFields = (
     <>
       {/* اختيار الفرع أو الجهة - مشترك لجميع العمليات */}
-      {(type === "outgoing" || type === "incoming" || type === "damaged" || type === "purchase") ? (
+      {(type === "outgoing" || type === "incoming" || type === "damaged" || type === "purchase" || type === "sale") ? (
         <div className="mb-4">
           <label className="block mb-2 text-sm font-medium text-gray-300">الفرع / الجهة</label>
           <select 
             name="branchId" 
             onChange={handleChange} 
             className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5"
-            required={type !== "purchase"} // الشراء قد لا يكون من فرع
+            required={type !== "purchase" && type !== "sale"} // الشراء والبيع قد لا يكون من فرع
           >
             <option value="">اختر الفرع</option>
             {branches.map((branch) => (
@@ -158,7 +188,9 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
         dailyReport={dailyReport}
         type={type}
         quantities={quantities}
+        amounts={amounts}
         onQuantityChange={handleQuantityChange}
+        onAmountChange={handleAmountChange}
       />
     </>
   );

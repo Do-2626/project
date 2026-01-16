@@ -22,6 +22,7 @@ interface DailyLogProps {
     outgoing?: React.ReactNode;
     incoming?: React.ReactNode;
     damaged?: React.ReactNode;
+    sale?: React.ReactNode;
   };
 }
 
@@ -30,6 +31,7 @@ const typeLabels: Record<string, string> = {
   outgoing: "تحميل",
   incoming: "مرتجع",
   damaged: "تالف",
+  sale: "بيع",
 };
 
 type NotificationType = "success" | "error";
@@ -48,6 +50,22 @@ export default function DailyLog({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState("");
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
+  const [typeFilter, setTypeFilter] = useState<string>("");
+  const [partyFilter, setPartyFilter] = useState<string>("");
+
+  const filteredTransactions = during.filter((t: any) => {
+    const typeMatch = !typeFilter || t.type === typeFilter;
+    const partyName = t.branchId?.name || t.party || "-";
+    const partyMatch = !partyFilter || partyName === partyFilter;
+    return typeMatch && partyMatch;
+  });
+
+  // جلب الجهات الفريدة للفلترة
+  const uniqueParties = Array.from(
+    new Set(
+      during.map((t: any) => t.branchId?.name || t.party || "-")
+    )
+  ).filter(p => p !== "-");
 
   const handleDeleteClick = (id: string) => {
     setSelectedTransactionId(id);
@@ -102,15 +120,55 @@ export default function DailyLog({
       <h3 className="flex justify-between items-center text-lg font-semibold mb-3 text-gray-200 border-b border-gray-600 pb-2">
         سجل عمليات اليوم
         <ExportButtonCSV
-          data={during}
+          data={filteredTransactions}
           fileName={`daily-log-${new Date().toISOString().split("T")[0]}`}
           label="تصدير السجل"
         />
       </h3>
 
-      {during.length === 0 ? (
+      {/* أدوات الفلترة */}
+      <div className="flex flex-wrap gap-4 mb-4 p-3 bg-gray-800 rounded-lg">
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-gray-400">النوع:</label>
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="bg-gray-700 border border-gray-600 text-white text-xs rounded-md p-1.5 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">الكل</option>
+            {Object.entries(typeLabels).map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-gray-400">الجهة:</label>
+          <select
+            value={partyFilter}
+            onChange={(e) => setPartyFilter(e.target.value)}
+            className="bg-gray-700 border border-gray-600 text-white text-xs rounded-md p-1.5 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">الكل</option>
+            {uniqueParties.map((party: any) => (
+              <option key={party} value={party}>{party}</option>
+            ))}
+          </select>
+        </div>
+
+        {(typeFilter || partyFilter) && (
+          <button
+            onClick={() => { setTypeFilter(""); setPartyFilter(""); }}
+            className="text-xs text-red-400 hover:text-red-300 underline"
+          >
+            إعادة تعيين
+          </button>
+        )}
+      </div>
+
+      {filteredTransactions.length === 0 ? (
         <div className="text-gray-500 text-center p-4">
-          لا توجد عمليات مسجلة لهذا اليوم.
+          {during.length === 0 ? "لا توجد عمليات مسجلة لهذا اليوم." : "لا توجد نتائج تطابق الفلترة."}
         </div>
       ) : (
         <table className="w-full text-sm">
@@ -124,7 +182,7 @@ export default function DailyLog({
             </tr>
           </thead>
           <tbody>
-            {during.map((t: any, i: number) => (
+            {filteredTransactions.map((t: any, i: number) => (
               <tr key={i} className="bg-gray-800 rounded-md">
                 <td className="p-2 flex items-center gap-2">
                   {iconMap && iconMap[t.type as keyof typeof iconMap]}

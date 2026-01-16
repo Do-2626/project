@@ -34,10 +34,14 @@ export async function GET(request: NextRequest) {
     
     // حساب الإيرادات والتكاليف من المعاملات
     transactions.forEach((transaction: any) => {
-      if (transaction.type === 'outgoing') {
-        // المبيعات: سعر البيع × الكمية
-        const sellingPrice = transaction.productId?.sellingPrice || 0;
-        sales += sellingPrice * transaction.quantity;
+      if (transaction.type === 'outgoing' || transaction.type === 'sale') {
+        // المبيعات: إذا كان هناك مبلغ محدد (لنوع sale) نستخدمه، وإلا نستخدم سعر البيع × الكمية (لنوع outgoing)
+        if (transaction.type === 'sale' && transaction.amount) {
+          sales += transaction.amount;
+        } else {
+          const sellingPrice = transaction.productId?.sellingPrice || 0;
+          sales += sellingPrice * transaction.quantity;
+        }
         
         // تكلفة البضاعة المباعة: سعر الشراء × الكمية
         const purchasePrice = transaction.productId?.purchasePrice || 0;

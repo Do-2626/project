@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import FinancialTransaction from '@/models/FinancialTransaction';
 import Product from '@/models/Product';
+import Branch from '@/models/Branch';
 import Transaction from '@/models/Transaction';
 import { dbConnect } from '@/lib/mongoose';
 

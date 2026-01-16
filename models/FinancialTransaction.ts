@@ -34,6 +34,10 @@ const FinancialTransactionSchema = new Schema({
   quantity: { 
     type: Number 
   }, // فقط للمشتريات
+  branchId: { 
+    type: Types.ObjectId, 
+    ref: 'Branch' 
+  }, // مرجع للفرع
   isRecurring: { 
     type: Boolean, 
     default: false 
@@ -43,5 +47,10 @@ const FinancialTransactionSchema = new Schema({
     default: Date.now 
   }
 });
+
+// Force deletion of model in development to ensure schema updates
+if (process.env.NODE_ENV === 'development') {
+  delete models.FinancialTransaction;
+}
 
 export default models.FinancialTransaction || model('FinancialTransaction', FinancialTransactionSchema);

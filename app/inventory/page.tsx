@@ -4,9 +4,10 @@ import InventoryTable from "@/app/inventory/components/InventoryTable";
 import Modal from "@/components/Modal";
 import Calendar from "@/components/Calendar";
 import DailyLog from "@/app/inventory/components/DailyLog";
+import WeeklyLog from "@/app/inventory/components/WeeklyLog";
 import PasswordPrompt from "@/components/PasswordPrompt";
 import dayjs from "dayjs";
-import { FaCartPlus, FaArrowUp, FaArrowDown, FaBan } from "react-icons/fa6";
+import { FaCartPlus, FaArrowUp, FaArrowDown, FaBan, FaDollarSign } from "react-icons/fa6";
 import { Product } from "./types";
 
 export default function InventoryPage() {
@@ -88,7 +89,7 @@ export default function InventoryPage() {
             <h3 className="text-lg font-semibold text-blue-300 mb-4 text-center tracking-wide font-cairo">
               العمليات اليومية
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 justify-center">
+            <div className="grid grid-cols-1 sm:grid-cols-5 gap-4 justify-center">
               <button
                 onClick={() =>
                   setModal({ open: true, type: "outgoing", data: null })
@@ -118,6 +119,16 @@ export default function InventoryPage() {
               >
                 <FaCartPlus className="mb-1" />
                 شراء
+              </button>
+              <button
+                onClick={() =>
+                  setModal({ open: true, type: "sale", data: null })
+                }
+                className="action-btn bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-blue-400 text-white font-bold py-4 px-2 rounded-xl shadow-lg flex flex-col items-center gap-2 transition duration-200 text-base"
+                title="تسجيل عملية بيع"
+              >
+                <FaDollarSign className="mb-1" />
+                بيع
               </button>
               <button
                 onClick={() =>
@@ -197,10 +208,25 @@ export default function InventoryPage() {
                     incoming: (
                       <FaArrowDown className="inline text-yellow-400 mr-1" />
                     ),
+                    sale: (
+                      <FaDollarSign className="inline text-blue-400 mr-1" />
+                    ),
                     damaged: <FaBan className="inline text-purple-400 mr-1" />,
                   }}
                 />
               )}
+
+              {/* سجل عمليات الأسبوع */}
+              <WeeklyLog 
+                iconMap={{
+                  purchase: <FaCartPlus className="inline text-green-400 mr-1" />,
+                  outgoing: <FaArrowUp className="inline text-red-400 mr-1" />,
+                  incoming: <FaArrowDown className="inline text-yellow-400 mr-1" />,
+                  sale: <FaDollarSign className="inline text-blue-400 mr-1" />,
+                  damaged: <FaBan className="inline text-purple-400 mr-1" />,
+                }}
+              />
+
               <h2 className="text-xl font-semibold mt-4 text-white drop-shadow">
                 التقارير
               </h2>

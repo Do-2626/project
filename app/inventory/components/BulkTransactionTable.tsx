@@ -4,6 +4,7 @@ interface Product {
   _id: string;
   name: string;
   purchasePrice?: number;
+  sellingPrice?: number;
 }
 
 interface DailyReportItem {
@@ -14,9 +15,11 @@ interface DailyReportItem {
 interface BulkTransactionTableProps {
   products: Product[];
   dailyReport: DailyReportItem[];
-  type: string; // "outgoing", "incoming", "damaged", "purchase"
+  type: string; // "outgoing", "incoming", "damaged", "purchase", "sale"
   quantities: Record<string, number>; // { productId: quantity }
+  amounts: Record<string, number>; // { productId: amount }
   onQuantityChange: (productId: string, quantity: number) => void;
+  onAmountChange: (productId: string, amount: number) => void;
 }
 
 export default function BulkTransactionTable({
@@ -24,13 +27,15 @@ export default function BulkTransactionTable({
   dailyReport,
   type,
   quantities,
+  amounts,
   onQuantityChange,
+  onAmountChange,
 }: BulkTransactionTableProps) {
   // دالة لحساب الرصيد المتوقع
   const calculateExpected = (current: number, qty: number) => {
     if (type === "purchase" || type === "incoming") {
       return current + qty;
-    } else if (type === "outgoing" || type === "damaged") {
+    } else if (type === "outgoing" || type === "damaged" || type === "sale") {
       return current - qty;
     }
     return current;
@@ -44,6 +49,7 @@ export default function BulkTransactionTable({
             <th className="px-4 py-3">الصنف</th>
             <th className="px-4 py-3 text-center">المخزون الحالي</th>
             <th className="px-4 py-3 text-center">الكمية</th>
+            {type === "sale" && <th className="px-4 py-3 text-center">المبلغ</th>}
             <th className="px-4 py-3 text-center">المتوقع</th>
           </tr>
         </thead>
@@ -55,6 +61,7 @@ export default function BulkTransactionTable({
             );
             const currentStock = reportItem ? reportItem.endQty : 0;
             const quantity = quantities[product._id] || 0;
+            const amount = amounts[product._id] || 0;
             const expected = calculateExpected(currentStock, quantity);
             const isModified = quantity > 0;
             const isNegative = expected < 0;
@@ -87,6 +94,26 @@ export default function BulkTransactionTable({
                     placeholder="0"
                   />
                 </td>
+                {type === "sale" && (
+                  <td className="px-4 py-2 text-center">
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={amount === 0 ? "" : amount}
+                      onChange={(e) =>
+                        onAmountChange(
+                          product._id,
+                          parseFloat(e.target.value) || 0
+                        )
+                      }
+                      className={`w-24 text-center rounded p-1 text-white bg-gray-700 border ${
+                        isModified && amount > 0 ? "border-green-500 ring-1 ring-green-500" : "border-gray-600"
+                      } focus:outline-none focus:border-green-500`}
+                      placeholder="0.00"
+                    />
+                  </td>
+                )}
                 <td
                   className={`px-4 py-2 text-center font-bold ${
                     isNegative ? "text-red-500" : "text-green-400"
