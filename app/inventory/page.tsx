@@ -7,7 +7,8 @@ import DailyLog from "@/app/inventory/components/DailyLog";
 import WeeklyLog from "@/app/inventory/components/WeeklyLog";
 import PasswordPrompt from "@/components/PasswordPrompt";
 import dayjs from "dayjs";
-import { FaCartPlus, FaArrowUp, FaArrowDown, FaBan, FaDollarSign } from "react-icons/fa6";
+import DataTable from "@/components/DataTable";
+import { FaCartPlus, FaArrowUp, FaArrowDown, FaBan, FaDollarSign, FaWallet } from "react-icons/fa6";
 import { Product } from "./types";
 
 export default function InventoryPage() {
@@ -89,7 +90,7 @@ export default function InventoryPage() {
             <h3 className="text-lg font-semibold text-blue-300 mb-4 text-center tracking-wide font-cairo">
               العمليات اليومية
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-5 gap-4 justify-center">
+            <div className="grid grid-cols-1 sm:grid-cols-6 gap-4 justify-center">
               <button
                 onClick={() =>
                   setModal({ open: true, type: "outgoing", data: null })
@@ -132,6 +133,16 @@ export default function InventoryPage() {
               </button>
               <button
                 onClick={() =>
+                  setModal({ open: true, type: "dailyExpense", data: null })
+                }
+                className="action-btn bg-orange-600 hover:bg-orange-700 focus:ring-2 focus:ring-orange-400 text-white font-bold py-4 px-2 rounded-xl shadow-lg flex flex-col items-center gap-2 transition duration-200 text-base"
+                title="تسجيل مصروف يومي"
+              >
+                <FaWallet className="mb-1" />
+                مصروف
+              </button>
+              <button
+                onClick={() =>
                   setModal({ open: true, type: "damaged", data: null })
                 }
                 className="action-btn bg-purple-600 hover:bg-purple-700 focus:ring-2 focus:ring-400 text-white font-bold py-4 px-2 rounded-xl shadow-lg flex flex-col items-center gap-2 transition duration-200 text-base"
@@ -143,7 +154,8 @@ export default function InventoryPage() {
             </div>
           </div>
           <div className="space-y-8">
-            <div className="bg-gray-700 p-4 rounded-xl mt-6 shadow-inner border border-gray-600">
+
+            <div className="bg-gray-700 p-4 border-t border-gray-600 rounded-xl mt-6 shadow-inner border border-gray-600">
               <h3 className="flex justify-between items-center text-lg font-semibold mb-3 text-gray-200 border-b border-gray-600 pb-2">
                 حالة المخزون
                 <button
@@ -163,29 +175,36 @@ export default function InventoryPage() {
                   </span>
                 </button>
               </h3>
-              <table className="w-full text-sm">
-                <thead className="bg-gray-800 sticky top-0 z-10">
-                  <tr>
-                    <th className="p-2 text-blue-300">الصنف</th>
-                    <th className="p-2 text-blue-300">بداية اليوم</th>
-                    <th className="p-2 text-blue-300">نهاية اليوم</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dailyReport?.report?.map((r: any, idx: number) => (
-                    <tr
-                      key={r.product._id}
-                      className={idx % 2 === 0 ? "bg-gray-800" : "bg-gray-900"}
-                    >
-                      <td className="p-2 font-medium text-white">
-                        {r.product.name}
-                      </td>
-                      <td className="p-2 text-gray-200">{r.startQty}</td>
-                      <td className="p-2 text-gray-200">{r.endQty}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div className="overflow-x-auto border-gray-600 border-[1px] rounded-xl">
+                <DataTable
+                  data={dailyReport?.report || []}
+                  isLoading={!dailyReport}
+                  columns={[
+                    {
+                      header: "الصنف",
+                      className: "text-right",
+                      render: (r: any) => (
+                        <span className="font-medium text-gray-300">
+                          {r.product.name}
+                        </span>
+                      ),
+                    },
+                    {
+                      header: "بداية اليوم",
+                      className: "text-center",
+                      key: "startQty",
+                    },
+                    {
+                      header: "نهاية اليوم",
+                      className: "text-center",
+                      key: "endQty",
+                    },
+                  ]}
+                  rowClassName={() =>
+                    "hover:bg-gray-700 transition-colors duration-200"
+                  }
+                />
+              </div>
             </div>
 
             <div className="">
@@ -212,54 +231,61 @@ export default function InventoryPage() {
                       <FaDollarSign className="inline text-blue-400 mr-1" />
                     ),
                     damaged: <FaBan className="inline text-purple-400 mr-1" />,
+                    expense: <FaWallet className="inline text-orange-400 mr-1" />,
                   }}
                 />
               )}
 
               {/* سجل عمليات الأسبوع */}
-              <WeeklyLog 
+              <WeeklyLog
                 iconMap={{
                   purchase: <FaCartPlus className="inline text-green-400 mr-1" />,
                   outgoing: <FaArrowUp className="inline text-red-400 mr-1" />,
                   incoming: <FaArrowDown className="inline text-yellow-400 mr-1" />,
                   sale: <FaDollarSign className="inline text-blue-400 mr-1" />,
                   damaged: <FaBan className="inline text-purple-400 mr-1" />,
+                  expense: <FaWallet className="inline text-orange-400 mr-1" />,
                 }}
               />
 
-              <h2 className="text-xl font-semibold mt-4 text-white drop-shadow">
-                التقارير
-              </h2>
-              {!showProtected ? (
-                <div className="mb-4">
-                  <PasswordPrompt
-                    onSuccess={() => setShowProtected(true)}
-                    label="كلمة المرور لعرض التقارير المالية"
-                    buttonText="تأكيد"
-                  />
-                </div>
-              ) : (
-                <div className="bg-gray-700 p-4 rounded-xl mb-6 shadow-inner border border-gray-600">
-                  <p className="text-gray-300">إجمالي قيمة المخزون الحالية</p>
-                  <p className="text-3xl font-bold text-green-400 mt-2">
-                    {products
-                      .reduce((acc: number, p: any) => {
-                        const qty =
-                          dailyReport?.report?.find(
-                            (r: any) => r.product._id === p._id
-                          )?.endQty || 0;
-                        return acc + qty * (p.purchasePrice || 0);
-                      }, 0)
-                      .toFixed(2)}{" "}
-                    جنيه
-                  </p>
-                  <hr />
-                  {/* إضافة صنف جديد */}
-                  <>
-                    <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                      <h2 className="text-2xl font-bold text-white drop-shadow font-cairo">
-                        قائمة الأصناف
-                      </h2>
+
+
+              <div className="bg-gray-700 p-4 rounded-xl my-6 shadow-inner border border-gray-600">
+                <h2 className="flex justify-between items-center text-lg font-semibold mb-3 text-gray-200 border-b border-gray-600 pb-2">
+                  التقارير
+                </h2>
+                {!showProtected ? (
+                  <div className="mb-4">
+                    <PasswordPrompt
+                      onSuccess={() => setShowProtected(true)}
+                      label="كلمة المرور لعرض التقارير المالية"
+                      buttonText="تأكيد"
+                    />
+                  </div>
+                ) : (
+                  <div className="bg-gray-800 rounded-xl px-4 overflow-hidden shadow-lg border border-gray-700">
+                    <div className="my-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                      <span className="text-blue-300 font-bold">
+                        <h2 className="text-2xl font-bold text-white drop-shadow font-cairo">
+                          قائمة الأصناف
+                        </h2>
+
+                        <span className="text-sm font-normal text-gray-400">
+                          إجمالي قيمة المخزون الحالية -{` `}
+                          <span className="font-bold text-green-400">
+                            {products
+                              .reduce((acc: number, p: any) => {
+                                const qty =
+                                  dailyReport?.report?.find((r: any) => r.product._id === p._id)
+                                    ?.endQty || 0;
+                                return acc + qty * (p.purchasePrice || 0);
+                              }, 0)
+                              .toFixed(2)}{" "}
+                            جنيه
+                          </span>
+                        </span>
+                      </span>
+
                       <button
                         onClick={() =>
                           setModal({
@@ -268,7 +294,7 @@ export default function InventoryPage() {
                             data: null,
                           })
                         }
-                        className="bg-blue-700 hover:bg-blue-800 focus:ring-2 focus:ring-blue-400 text-white font-bold py-2 px-6 rounded-xl shadow-lg transition duration-200 text-lg flex items-center gap-2 font-cairo"
+                        className="bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-blue-400 text-white font-semibold py-2 px-6 rounded-xl shadow-lg transition duration-200 text-lg flex items-center gap-2 font-cairo"
                         title="إضافة صنف جديد"
                       >
                         <span className="inline-flex items-center gap-2">
@@ -277,6 +303,7 @@ export default function InventoryPage() {
                         </span>
                       </button>
                     </div>
+
                     <div className="overflow-x-auto rounded-xl border border-gray-700 bg-gray-900 shadow-inner mb-8">
                       <InventoryTable
                         products={products}
@@ -293,23 +320,10 @@ export default function InventoryPage() {
                         onUpdateProduct={handleUpdateProduct}
                       />
                     </div>
-                  </>
-                  <hr />
-                  <div>
-                    <p className="text-gray-300">فرق المرتجع من التحميل</p>
-                    <p className="text-3xl font-bold text-red-400 mt-2">
-                      {dailyReport?.report?.reduce((acc: number, r: any) => {
-                        const qty =
-                          dailyReport?.report?.find(
-                            (report: any) =>
-                              report.product._id === r.product._id
-                          )?.endQty || 0;
-                        return acc + "-" + qty;
-                      }, 0)}
-                    </p>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
+
             </div>
           </div>
         </div>

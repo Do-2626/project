@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Transaction from '@/models/Transaction';
 import Product from '@/models/Product';
 import Branch from '@/models/Branch';
+import FinancialTransaction from '@/models/FinancialTransaction';
 import { dbConnect } from '@/lib/mongoose';
 
 // احسب حالة المخزون في بداية ونهاية اليوم
@@ -9,7 +10,6 @@ export async function GET(req: NextRequest) {
   await dbConnect();
   const { searchParams } = new URL(req.url!);
   const date = searchParams.get('date');
-  // if (!date) return NextResponse.json({ error: 'date required' }, { status: 400 });
 
   // جميع المنتجات
   const products = await Product.find({});
@@ -27,8 +27,23 @@ export async function GET(req: NextRequest) {
     } }
   ]);
 
-  // العمليات خلال اليوم
-  const during = await Transaction.find({ date }).populate('productId').populate('branchId');
+  // العمليات المخزنية خلال اليوم
+  const duringInventory = await Transaction.find({ date }).populate('productId').populate('branchId');
+
+  // العمليات المالية (المصاريف) خلال اليوم
+  const duringFinance = await FinancialTransaction.find({ 
+    date, 
+    type: 'expense' 
+  }).populate('branchId').populate('expenseCategoryId');
+
+  // دمج العمليات
+  const during = [
+    ...duringInventory.map(t => t.toObject()),
+    ...duringFinance.map(f => ({
+      ...f.toObject(),
+      isFinancial: true
+    }))
+  ];
 
   // العمليات حتى نهاية اليوم (<= هذا اليوم)
   const after = await Transaction.aggregate([

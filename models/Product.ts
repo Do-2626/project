@@ -8,4 +8,9 @@ const ProductSchema = new Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// Force deletion of model in development to ensure schema updates
+if (process.env.NODE_ENV === 'development') {
+  delete models.Product;
+}
+
 export default models.Product || model('Product', ProductSchema);

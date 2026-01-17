@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import isBetween from "dayjs/plugin/isBetween";
 import ExportButtonCSV from "@/components/ExportButtonCSV";
+import PasswordPrompt from "@/components/PasswordPrompt";
 
 dayjs.extend(isBetween);
 
@@ -17,18 +18,23 @@ const typeLabels: Record<string, string> = {
   incoming: "مرتجع",
   damaged: "تالف",
   sale: "بيع",
+  expense: "مصروف",
 };
 
 export default function WeeklyLog({ iconMap }: WeeklyLogProps) {
-  const [selectedWeek, setSelectedWeek] = useState(dayjs().startOf("week").subtract(1, "day")); // Default to this week (Saturday start)
+  const currentSaturday = dayjs().startOf("day").subtract((dayjs().day() + 1) % 7, "day");
+  const [selectedWeek, setSelectedWeek] = useState(currentSaturday); // Default to this week (Saturday start)
   const [transactions, setTransactions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [showProtected, setShowProtected] = useState(false);
+
 
   // Generate last 12 weeks for the filter
   const weeks = Array.from({ length: 12 }).map((_, i) => {
-    // dayjs week starts on Sunday (0). User wants Saturday (6).
-    // To get Saturday, we find the most recent Saturday.
-    const start = dayjs().startOf("week").subtract(1, "day").subtract(i, "week");
+    // To get the most recent Saturday:
+    // If today is Saturday (6), start is today.
+    // If today is Sunday (0), start is yesterday, and so on.
+    const start = currentSaturday.subtract(i, "week");
     const end = start.add(6, "day");
     return { start, end };
   });
@@ -38,13 +44,14 @@ export default function WeeklyLog({ iconMap }: WeeklyLogProps) {
       setIsLoading(true);
       const startStr = selectedWeek.format("YYYY-MM-DD");
       const endStr = selectedWeek.add(6, "day").format("YYYY-MM-DD");
-      
+
       try {
         // We need an API that supports date range. 
         // Checking if /api/transactions supports range. If not, we'll fetch all and filter or assume it might need range support.
         // Based on previous analysis, it might only support single date.
         // Let's try fetching with range params.
-        const res = await fetch(`/api/transactions?startDate=${startStr}&endDate=${endStr}`);
+        // Fetching from the new weekly-report API that joins inventory and expenses
+        const res = await fetch(`/api/inventory/weekly-report?startDate=${startStr}&endDate=${endStr}`);
         const data = await res.json();
         setTransactions(data);
       } catch (error) {
@@ -73,35 +80,46 @@ export default function WeeklyLog({ iconMap }: WeeklyLogProps) {
           <h3 className="text-xl font-bold text-blue-400">سجل عمليات الأسبوع</h3>
           <p className="text-gray-400 text-sm mt-1">عرض العمليات حسب الأسبوع (يبدأ من السبت)</p>
         </div>
-        
-        <div className="flex items-center gap-3">
-          <label className="text-gray-300">اختر الأسبوع:</label>
-          <select 
-            className="bg-gray-800 border border-gray-600 text-white rounded-lg p-2 focus:ring-2 focus:ring-blue-500"
-            value={selectedWeek.format("YYYY-MM-DD")}
-            onChange={(e) => setSelectedWeek(dayjs(e.target.value))}
-          >
-            {weeks.map((w, i) => (
-              <option key={i} value={w.start.format("YYYY-MM-DD")}>
-                {w.start.format("YYYY/MM/DD")} - {w.end.format("YYYY/MM/DD")}
-              </option>
-            ))}
-          </select>
-          
-          <ExportButtonCSV
-            data={transactions}
-            fileName={`weekly-log-${selectedWeek.format("YYYY-MM-DD")}`}
-            label="تصدير الأسبوع"
+
+
+        {showProtected && (
+          <div className="flex items-center gap-3">
+            <label className="text-gray-300">اختر الأسبوع:</label>
+            <select
+              className="bg-gray-800 border border-gray-600 text-white rounded-lg p-2 focus:ring-2 focus:ring-blue-500"
+              value={selectedWeek.format("YYYY-MM-DD")}
+              onChange={(e) => setSelectedWeek(dayjs(e.target.value))}
+            >
+              {weeks.map((w, i) => (
+                <option key={i} value={w.start.format("YYYY-MM-DD")}>
+                  {w.start.format("YYYY/MM/DD")} - {w.end.format("YYYY/MM/DD")}
+                </option>
+              ))}
+            </select>
+
+            <ExportButtonCSV
+              data={transactions}
+              fileName={`weekly-log-${selectedWeek.format("YYYY-MM-DD")}`}
+              label="تصدير الأسبوع"
+            />
+          </div>)}
+      </div>
+      {!showProtected ? (
+        <div className="mb-4">
+          <PasswordPrompt
+            onSuccess={() => setShowProtected(true)}
+            label="كلمة المرور لعرض التقارير المالية"
+            buttonText="تأكيد"
           />
         </div>
-      </div>
+      ) : ("")}
 
-      {isLoading ? (
+      {showProtected && isLoading ? (
         <div className="text-center py-10">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mx-auto"></div>
           <p className="text-gray-400 mt-4">جاري تحميل البيانات...</p>
         </div>
-      ) : transactions.length === 0 ? (
+      ) : showProtected && transactions.length === 0 ? (
         <div className="text-center py-10 text-gray-500 italic">
           لا توجد عمليات مسجلة في هذا الأسبوع.
         </div>
@@ -136,10 +154,28 @@ export default function WeeklyLog({ iconMap }: WeeklyLogProps) {
                           <span>{typeLabels[t.type]}</span>
                         </div>
                       </td>
-                      <td className="p-3 text-gray-200">{t.productId?.name}</td>
-                      <td className="p-3 text-gray-200 font-mono">{t.quantity}</td>
+                      <td className="p-3">
+                        {t.isFinancial ? (
+                          <div className="flex flex-col">
+                            <span className="text-blue-300 font-bold">
+                              {t.expenseCategoryId?.name || t.category || "مصروف"}
+                              {t.expenseSubtype && ` - ${t.expenseSubtype}`}
+                            </span>
+                            {t.description && (
+                              <span className="text-xs text-gray-400 italic">
+                                {t.description}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          t.productId?.name || ""
+                        )}
+                      </td>
+                      <td className="p-3 text-gray-200 font-mono">
+                        {t.isFinancial ? "-" : t.quantity}
+                      </td>
                       <td className="p-3 text-green-400 font-bold">
-                        {t.amount ? `${t.amount.toLocaleString()} ج.م` : "-"}
+                        {t.amount ? `${t.amount.toLocaleString()} د.ل` : "-"}
                       </td>
                       <td className="p-3">
                         {t.branchId?.name ? (
@@ -158,6 +194,8 @@ export default function WeeklyLog({ iconMap }: WeeklyLogProps) {
           ))}
         </div>
       )}
+
+
     </div>
   );
 }

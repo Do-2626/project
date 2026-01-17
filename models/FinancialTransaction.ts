@@ -42,6 +42,13 @@ const FinancialTransactionSchema = new Schema({
     type: Boolean, 
     default: false 
   },
+  expenseCategoryId: {
+    type: Types.ObjectId,
+    ref: 'ExpenseCategory'
+  },
+  expenseSubtype: {
+    type: String
+  },
   createdAt: { 
     type: Date, 
     default: Date.now 

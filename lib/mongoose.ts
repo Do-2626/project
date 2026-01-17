@@ -1,4 +1,9 @@
 import mongoose from 'mongoose';
+import '@/models/Branch';
+import '@/models/Product';
+import '@/models/ExpenseCategory';
+import '@/models/Transaction';
+import '@/models/FinancialTransaction';
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
 

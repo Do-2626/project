@@ -6,6 +6,7 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
   const [form, setForm] = useState<any>({});
   const [showPassword, setShowPassword] = useState(false);
   const [branches, setBranches] = useState<any[]>([]);
+  const [expenseCategories, setExpenseCategories] = useState<any[]>([]);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [amounts, setAmounts] = useState<Record<string, number>>({});
 
@@ -19,6 +20,11 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
         .then((res) => res.json())
         .then((data) => setBranches(data))
         .catch((err) => console.error("Failed to fetch branches", err));
+
+      fetch("/api/expense-categories")
+        .then((res) => res.json())
+        .then((data) => setExpenseCategories(data))
+        .catch((err) => console.error("Failed to fetch expense categories", err));
     }
   }, [open]);
 
@@ -65,6 +71,27 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
           purchasePrice: Number(form.purchasePrice),
           sellingPrice: Number(form.sellingPrice),
         }),
+      });
+    } else if (type === "dailyExpense") {
+      const selectedCategory = expenseCategories.find(c => c._id === form.expenseCategoryId);
+      const categoryName = selectedCategory ? selectedCategory.name : "أخرى";
+      
+      const expenseData = {
+        type: "expense",
+        amount: Number(form.amount),
+        category: categoryName,
+        expenseCategoryId: form.expenseCategoryId || null,
+        expenseSubtype: form.expenseSubtype || "",
+        description: form.description || "",
+        date: selectedDate,
+        branchId: form.branchId || null,
+        party: form.party || (form.branchId ? branches.find(b => b._id === form.branchId)?.name : "")
+      };
+
+      await fetch("/api/finance/transactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(expenseData),
       });
     } else if (type !== "delete") {
       // إعداد البيانات للإرسال الجماعي
@@ -149,23 +176,23 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
   const transactionFields = (
     <>
       {/* اختيار الفرع أو الجهة - مشترك لجميع العمليات */}
-      {(type === "outgoing" || type === "incoming" || type === "damaged" || type === "purchase" || type === "sale") ? (
+      {(type === "outgoing" || type === "incoming" || type === "damaged" || type === "purchase" || type === "sale" || type === "dailyExpense") ? (
         <div className="mb-4">
           <label className="block mb-2 text-sm font-medium text-gray-300">الفرع / الجهة</label>
           <select 
             name="branchId" 
             onChange={handleChange} 
             className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5"
-            required={type !== "purchase" && type !== "sale"} // الشراء والبيع قد لا يكون من فرع
+            required={type !== "purchase" && type !== "sale" && type !== "dailyExpense"} // الشراء والبيع والمصاريف قد لا يكون من فرع
           >
-            <option value="">اختر الفرع</option>
+            <option value="">اختر الفرع (اختياري)</option>
             {branches.map((branch) => (
               <option key={branch._id} value={branch._id}>
                 {branch.name}
               </option>
             ))}
           </select>
-           {/* خيار إدخال يدوي للجهة في حالة الشراء أو إذا لم يكن فرعاً */}
+           {/* خيار إدخال يدوي للجهة */}
            {!form.branchId && (
             <input 
               name="party" 
@@ -175,23 +202,80 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
             />
            )}
         </div>
-      ) : (
-        <div className="mb-4">
-          <label className="block mb-2 text-sm font-medium text-gray-300">الجهة (المورد/المندوب/سبب التلف...)</label>
-          <input name="party" onChange={handleChange} className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5" placeholder="اسم الجهة (اختياري)" />
-        </div>
-      )}
+      ) : null}
 
-      {/* جدول المنتجات للإدخال الجماعي */}
-      <BulkTransactionTable 
-        products={products}
-        dailyReport={dailyReport}
-        type={type}
-        quantities={quantities}
-        amounts={amounts}
-        onQuantityChange={handleQuantityChange}
-        onAmountChange={handleAmountChange}
-      />
+      {type === "dailyExpense" ? (
+        <div className="space-y-4">
+          <div>
+            <label className="block mb-2 text-sm font-medium text-gray-300">نوع المصروف</label>
+            <div className="flex gap-2">
+              <select 
+                name="expenseCategoryId" 
+                onChange={handleChange} 
+                className="bg-gray-700 border border-gray-600 text-white rounded-lg flex-1 p-2.5"
+                required
+              >
+                <option value="">اختر نوع المصروف</option>
+                {expenseCategories.map((cat) => (
+                  <option key={cat._id} value={cat._id}>
+                    {cat.name} ({cat.classification})
+                  </option>
+                ))}
+                <option value="other">أخرى (إدخال يدوي)</option>
+              </select>
+              <button 
+                type="button"
+                onClick={() => window.open('/expense-categories', '_blank')}
+                className="bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-lg transition"
+                title="إدارة الأنواع"
+              >
+                +
+              </button>
+            </div>
+            {form.expenseCategoryId === "other" && (
+              <input 
+                name="expenseSubtype" 
+                onChange={handleChange} 
+                className="mt-2 bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5" 
+                placeholder="اكتب نوع المصروف هنا"
+                required
+              />
+            )}
+          </div>
+          <div>
+            <label className="block mb-2 text-sm font-medium text-gray-300">المبلغ</label>
+            <input 
+              name="amount" 
+              type="number" 
+              step="0.01" 
+              onChange={handleChange} 
+              className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5" 
+              placeholder="0.00"
+              required 
+            />
+          </div>
+          <div>
+            <label className="block mb-2 text-sm font-medium text-gray-300">الوصف</label>
+            <textarea 
+              name="description" 
+              onChange={handleChange} 
+              className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5" 
+              placeholder="وصف إضافي للمصروف..."
+              rows={3}
+            />
+          </div>
+        </div>
+      ) : (
+        <BulkTransactionTable 
+          products={products}
+          dailyReport={dailyReport}
+          type={type}
+          quantities={quantities}
+          amounts={amounts}
+          onQuantityChange={handleQuantityChange}
+          onAmountChange={handleAmountChange}
+        />
+      )}
     </>
   );
 

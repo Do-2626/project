@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { FaMoneyBillWave, FaShoppingCart, FaReceipt } from "react-icons/fa";
+import { FaMoneyBillWave, FaShoppingCart, FaReceipt, FaPlus, FaSearch } from "react-icons/fa";
 import Calendar from "@/components/Calendar";
 import dayjs from "dayjs";
 import PasswordPrompt from "@/components/PasswordPrompt";
 import ExportButton from "@/components/ExportButton";
 import { Types } from "mongoose";
 import ExportButtonCSV from "@/components/ExportButtonCSV";
+import Link from "next/link";
 
 // تعريف أنواع البيانات
 interface Product {
@@ -16,6 +17,17 @@ interface Product {
   purchasePrice: number;
   sellingPrice: number;
   weight?: string;
+}
+
+interface Branch {
+  _id: string;
+  name: string;
+}
+
+interface ExpenseCategory {
+  _id: string;
+  name: string;
+  classification: string;
 }
 
 interface FinancialTransaction {
@@ -27,13 +39,16 @@ interface FinancialTransaction {
   party?: string;
   date: string;
   invoiceNumber?: string;
-  productId?: string | Types.ObjectId; // يمكن أن يكون سلسلة نصية أو ObjectId
+  productId?: string | Types.ObjectId;
   quantity?: number;
+  branchId?: string | Types.ObjectId;
+  expenseCategoryId?: string | Types.ObjectId;
+  expenseSubtype?: string;
   isRecurring: boolean;
   createdAt: string;
 }
 
-const expenseCategories = [
+const staticExpenseCategories = [
   "إيجار",
   "رواتب",
   "مرافق",
@@ -56,6 +71,10 @@ export default function FinancialTransactionsPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [transactions, setTransactions] = useState<FinancialTransaction[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [dbExpenseCategories, setDbExpenseCategories] = useState<ExpenseCategory[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [selectedDate, setSelectedDate] = useState(
     dayjs().format("YYYY-MM-DD")
   );
@@ -72,6 +91,9 @@ export default function FinancialTransactionsPage() {
     party: "",
     invoiceNumber: "",
     isRecurring: false,
+    branchId: "",
+    expenseCategoryId: "",
+    expenseSubtype: "",
   });
   const [filterType, setFilterType] = useState<string>("all");
   const [eqtera7_elwasf, setEqtera7_elwasf] = useState({
@@ -87,12 +109,20 @@ export default function FinancialTransactionsPage() {
     }
   }, [selectedDate, isAuthorized, filterType]);
 
-  // جلب المنتجات
+  // جلب المنتجات والفروع والتصنيفات
   useEffect(() => {
     if (isAuthorized) {
       fetch("/api/inventory")
         .then((res) => res.json())
         .then(setProducts);
+      
+      fetch("/api/branches")
+        .then((res) => res.json())
+        .then(setBranches);
+
+      fetch("/api/expense-categories")
+        .then((res) => res.json())
+        .then(setDbExpenseCategories);
     }
   }, [isAuthorized]);
 
@@ -177,7 +207,11 @@ export default function FinancialTransactionsPage() {
           party: "",
           invoiceNumber: "",
           isRecurring: false,
+          branchId: "",
+          expenseCategoryId: "",
+          expenseSubtype: "",
         });
+        setSearchTerm("");
         setShowModal(false);
         fetchTransactions();
       } else {
@@ -221,6 +255,9 @@ export default function FinancialTransactionsPage() {
       party: "",
       invoiceNumber: "",
       isRecurring: false,
+      branchId: "",
+      expenseCategoryId: "",
+      expenseSubtype: "",
       ...(type === "purchase"
         ? {
             productId: "",
@@ -228,6 +265,7 @@ export default function FinancialTransactionsPage() {
           }
         : {}),
     });
+    setSearchTerm("");
     setShowModal(true);
   };
 
@@ -408,6 +446,7 @@ export default function FinancialTransactionsPage() {
               <thead className="text-xs uppercase bg-gray-700 text-gray-300">
                 <tr>
                   <th className="px-6 py-3">النوع</th>
+                  <th className="px-6 py-3">الفرع</th>
                   <th className="px-6 py-3">التصنيف</th>
                   <th className="px-6 py-3">المبلغ</th>
                   <th className="px-6 py-3">الوصف</th>
@@ -438,7 +477,12 @@ export default function FinancialTransactionsPage() {
                           {getTypeLabel(transaction.type)}
                         </span>
                       </td>
-                      <td className="px-6 py-4">{transaction.category}</td>
+                      <td className="px-6 py-4">
+                        {branches.find(b => b._id === transaction.branchId?.toString())?.name || "-"}
+                      </td>
+                      <td className="px-6 py-4">
+                        {transaction.expenseSubtype || transaction.category}
+                      </td>
                       <td className="px-6 py-4 font-semibold">
                         {transaction.amount.toFixed(2)}
                       </td>
@@ -505,36 +549,125 @@ export default function FinancialTransactionsPage() {
 
                 <div>
                   <label className="block mb-2 text-sm font-medium text-gray-300">
-                    التصنيف
+                    الفرع
                   </label>
                   <select
-                    name="category"
-                    value={formData.category}
+                    name="branchId"
+                    value={formData.branchId?.toString()}
                     onChange={handleInputChange}
                     className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5"
-                    required
                   >
-                    <option value="">اختر التصنيف</option>
-                    {modalType === "expense" &&
-                      expenseCategories.map((category) => (
-                        <option key={category} value={category}>
-                          {category}
-                        </option>
-                      ))}
-                    {modalType === "income" &&
-                      incomeCategories.map((category) => (
-                        <option key={category} value={category}>
-                          {category}
-                        </option>
-                      ))}
-                    {modalType === "purchase" &&
-                      purchaseCategories.map((category) => (
-                        <option key={category} value={category}>
-                          {category}
-                        </option>
-                      ))}
+                    <option value="">اختر الفرع</option>
+                    {branches.map((branch) => (
+                      <option key={branch._id} value={branch._id}>
+                        {branch.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
+
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-gray-300">
+                    التصنيف
+                  </label>
+                  <div className="relative">
+                    <div className="flex gap-2">
+                       <div className="relative flex-1">
+                        <input
+                          type="text"
+                          placeholder="ابحث عن تصنيف..."
+                          value={searchTerm || formData.category || ""}
+                          onFocus={() => setShowCategoryDropdown(true)}
+                          onChange={(e) => {
+                            setSearchTerm(e.target.value);
+                            setFormData({...formData, category: e.target.value});
+                            setShowCategoryDropdown(true);
+                          }}
+                          className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5 pr-10"
+                        />
+                        <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                       </div>
+                       {modalType === "expense" && (
+                         <Link 
+                          href="/expense-categories" 
+                          className="bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-lg flex items-center justify-center"
+                          title="إدارة الأنواع"
+                         >
+                          <FaPlus />
+                         </Link>
+                       )}
+                    </div>
+
+                    {showCategoryDropdown && (
+                      <div className="absolute z-10 w-full mt-1 bg-gray-700 border border-gray-600 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                        {modalType === "expense" ? (
+                          <>
+                            {dbExpenseCategories
+                              .filter(c => c.name.includes(searchTerm))
+                              .map((category) => (
+                                <div
+                                  key={category._id}
+                                  className="p-2.5 hover:bg-gray-600 cursor-pointer text-white"
+                                  onClick={() => {
+                                    setFormData({ ...formData, category: category.name, expenseCategoryId: category._id });
+                                    setSearchTerm(category.name);
+                                    setShowCategoryDropdown(false);
+                                  }}
+                                >
+                                  {category.name} <span className="text-xs text-gray-400">({category.classification})</span>
+                                </div>
+                              ))}
+                            <div
+                              className="p-2.5 hover:bg-gray-600 cursor-pointer text-blue-400 font-bold"
+                              onClick={() => {
+                                setFormData({ ...formData, category: "أخرى", expenseCategoryId: undefined });
+                                setSearchTerm("أخرى");
+                                setShowCategoryDropdown(false);
+                              }}
+                            >
+                              أخرى (إدخال يدوي)
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            {(modalType === "income" ? incomeCategories : purchaseCategories)
+                              .filter(c => c.includes(searchTerm))
+                              .map((category) => (
+                                <div
+                                  key={category}
+                                  className="p-2.5 hover:bg-gray-600 cursor-pointer text-white"
+                                  onClick={() => {
+                                    setFormData({ ...formData, category });
+                                    setSearchTerm(category);
+                                    setShowCategoryDropdown(false);
+                                  }}
+                                >
+                                  {category}
+                                </div>
+                              ))}
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {formData.category === "أخرى" && (
+                  <div>
+                    <label className="block mb-2 text-sm font-medium text-gray-300">
+                      نوع المصروف (يدوي)
+                    </label>
+                    <input
+                      type="text"
+                      name="expenseSubtype"
+                      value={formData.expenseSubtype}
+                      onChange={handleInputChange}
+                      className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5"
+                      placeholder="اكتب نوع المصروف هنا..."
+                      required
+                    />
+                  </div>
+                )}
 
                 <div>
                   <label className="block mb-2 text-sm font-medium text-gray-300">

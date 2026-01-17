@@ -23,6 +23,7 @@ interface DailyLogProps {
     incoming?: React.ReactNode;
     damaged?: React.ReactNode;
     sale?: React.ReactNode;
+    expense?: React.ReactNode;
   };
 }
 
@@ -32,6 +33,7 @@ const typeLabels: Record<string, string> = {
   incoming: "مرتجع",
   damaged: "تالف",
   sale: "بيع",
+  expense: "مصروف",
 };
 
 type NotificationType = "success" | "error";
@@ -82,11 +84,17 @@ export default function DailyLog({
     setIsModalOpen(false);
     setIsLoading(true);
     try {
-      await fetch(`/api/transactions/${id}`, {
+      // التحقق مما إذا كانت عملية مالية أم مخزنية
+      const transactionToDelete = during.find((t: any) => t._id === id);
+      const url = transactionToDelete?.isFinancial
+        ? `/api/finance/transactions?id=${id}`
+        : `/api/transactions/${id}`;
+
+      await fetch(url, {
         method: "DELETE",
       });
 
-      onUpdateDuring(report.filter((t: Transaction) => t._id !== id));
+      onUpdateDuring(during.filter((t: any) => t._id !== id));
 
       setNotification({ type: "success", message: "تم حذف العنصر بنجاح" });
     } catch (error) {
@@ -109,9 +117,8 @@ export default function DailyLog({
       {/* إضافة الإشعارات */}
       {notification && (
         <div
-          className={`fixed top-4 right-4 p-4 rounded-lg ${
-            notification.type === "success" ? "bg-green-600" : "bg-red-600"
-          } text-white z-50`}
+          className={`fixed top-4 right-4 p-4 rounded-lg ${notification.type === "success" ? "bg-green-600" : "bg-red-600"
+            } text-white z-50`}
         >
           {notification.message}
         </div>
@@ -175,8 +182,8 @@ export default function DailyLog({
           <thead>
             <tr className="text-justify">
               <th className="p-2">النوع</th>
-              <th className="p-2">الصنف</th>
-              <th className="p-2">الكمية</th>
+              <th className="p-2">الصنف / الوصف</th>
+              <th className="p-2">الكمية / المبلغ</th>
               <th className="p-2">الجهة</th>
               <th className="p-2">الإجراءات</th>
             </tr>
@@ -188,8 +195,32 @@ export default function DailyLog({
                   {iconMap && iconMap[t.type as keyof typeof iconMap]}
                   <span className="font-semibold">{typeLabels[t.type]}</span>
                 </td>
-                <td className="p-2">{t.productId?.name || ""}</td>
-                <td className="p-2">{t.quantity}</td>
+                <td className="p-2">
+                  {t.isFinancial ? (
+                    <div className="flex flex-col">
+                      <span className="text-blue-300 font-bold">
+                        {t.expenseCategoryId?.name || t.category || "مصروف"}
+                        {t.expenseSubtype && ` - ${t.expenseSubtype}`}
+                      </span>
+                      {t.description && (
+                        <span className="text-xs text-gray-400 italic">
+                          {t.description}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    t.productId?.name || ""
+                  )}
+                </td>
+                <td className="p-2 font-mono">
+                  {t.isFinancial ? (
+                    <span className="text-red-400 font-bold">
+                      {t.amount?.toLocaleString()} ج.م
+                    </span>
+                  ) : (
+                    t.quantity
+                  )}
+                </td>
                 <td className="p-2">
                   {t.branchId?.name ? (
                     <span className="bg-blue-900 text-blue-200 px-2 py-1 rounded text-xs">
@@ -201,13 +232,13 @@ export default function DailyLog({
                 </td>
                 <td className="p-2 flex gap-2">
                   {/* {t.type !== "purchase" && ( */}
-                    <button
-                      onClick={() => handleDeleteClick(t._id)}
-                      disabled={isLoading}
-                      className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded disabled:opacity-50"
-                    >
-                      {isLoading ? "جاري الحذف..." : "حذف"}
-                    </button>
+                  <button
+                    onClick={() => handleDeleteClick(t._id)}
+                    disabled={isLoading}
+                    className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded disabled:opacity-50"
+                  >
+                    {isLoading ? "جاري الحذف..." : "حذف"}
+                  </button>
                   {/* )} */}
                 </td>
               </tr>
@@ -219,7 +250,7 @@ export default function DailyLog({
         open={isModalOpen}
         type={modalType}
         onClose={handleModalClose}
-        onSuccess={() => {}}
+        onSuccess={() => { }}
         products={[]}
         selectedDate={null}
         transactionId={selectedTransactionId}
