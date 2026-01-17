@@ -72,7 +72,7 @@ export default function InventoryPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-blue-900 bg-fixed">
       <header className="text-center mb-8">
         <h1 className="text-3xl md:text-4xl font-extrabold text-blue-400 drop-shadow-lg tracking-wide font-cairo">
-          نظام إدارة المخزون اليومي
+          نظام إدارة توتى بيروتى
         </h1>
         <p className="text-gray-300 mt-2 text-lg font-medium font-cairo">
           إدارة شاملة للمخزون والعمليات اليومية
@@ -80,13 +80,13 @@ export default function InventoryPage() {
       </header>
       <main className="grid gap-8 font-cairo">
         <div className="lg:col-span-2 bg-gradient-to-br from-gray-800 via-gray-900 to-gray-800 p-6 rounded-2xl shadow-2xl border border-gray-700">
-          <div className="bg-gradient-to-br from-gray-800 via-gray-900 to-gray-800 p-6 rounded-2xl shadow-2xl border border-gray-700">
-            <h2 className="text-xl font-semibold mb-4 text-white drop-shadow">
+          <div className="flex gap-5 items-center justify-between bg-gradient-to-br from-gray-800 via-gray-900 to-gray-800 p-2 rounded-2xl shadow-2xl border border-gray-700">
+            <h2 className="text-xl ml-3 font-semibold text-white drop-shadow">
               اليوم
             </h2>
             <Calendar selectedDate={selectedDate} onChange={setSelectedDate} />
           </div>
-          <div className="mt-10">
+          <div className="mt-6">
             <h3 className="text-lg font-semibold text-blue-300 mb-4 text-center tracking-wide font-cairo">
               العمليات اليومية
             </h3>
