@@ -2,9 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import dayjs from "dayjs";
+import { FaChevronDown, FaChevronUp, FaTrashCan, FaPlus, FaMinus, FaCalendarDays, FaFilter } from "react-icons/fa6";
 import isBetween from "dayjs/plugin/isBetween";
 import ExportButtonCSV from "@/components/ExportButtonCSV";
 import PasswordPrompt from "@/components/PasswordPrompt";
+import Modal from "@/components/Modal";
+import DataTable from "@/components/DataTable";
 
 dayjs.extend(isBetween);
 
@@ -23,179 +26,344 @@ const typeLabels: Record<string, string> = {
 
 export default function WeeklyLog({ iconMap }: WeeklyLogProps) {
   const currentSaturday = dayjs().startOf("day").subtract((dayjs().day() + 1) % 7, "day");
-  const [selectedWeek, setSelectedWeek] = useState(currentSaturday); // Default to this week (Saturday start)
+  const today = dayjs().format("YYYY-MM-DD");
+
+  const [selectedWeek, setSelectedWeek] = useState(currentSaturday);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showProtected, setShowProtected] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [typeFilter, setTypeFilter] = useState("");
+  const [partyFilter, setPartyFilter] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedTxId, setSelectedTxId] = useState<string | null>(null);
 
-
-  // Generate last 12 weeks for the filter
   const weeks = Array.from({ length: 12 }).map((_, i) => {
-    // To get the most recent Saturday:
-    // If today is Saturday (6), start is today.
-    // If today is Sunday (0), start is yesterday, and so on.
     const start = currentSaturday.subtract(i, "week");
     const end = start.add(6, "day");
     return { start, end };
   });
 
+  const fetchWeeklyTransactions = async () => {
+    setIsLoading(true);
+    const startStr = selectedWeek.format("YYYY-MM-DD");
+    const endStr = selectedWeek.add(6, "day").format("YYYY-MM-DD");
+
+    try {
+      const res = await fetch(`/api/inventory/weekly-report?startDate=${startStr}&endDate=${endStr}`);
+      if (!res.ok) throw new Error("Fetch failed");
+      const data = await res.json();
+      setTransactions(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Failed to fetch weekly transactions", error);
+      setTransactions([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchWeeklyTransactions = async () => {
-      setIsLoading(true);
-      const startStr = selectedWeek.format("YYYY-MM-DD");
-      const endStr = selectedWeek.add(6, "day").format("YYYY-MM-DD");
-
-      try {
-        // We need an API that supports date range. 
-        // Checking if /api/transactions supports range. If not, we'll fetch all and filter or assume it might need range support.
-        // Based on previous analysis, it might only support single date.
-        // Let's try fetching with range params.
-        // Fetching from the new weekly-report API that joins inventory and expenses
-        const res = await fetch(`/api/inventory/weekly-report?startDate=${startStr}&endDate=${endStr}`);
-        const data = await res.json();
-        setTransactions(data);
-      } catch (error) {
-        console.error("Failed to fetch weekly transactions", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchWeeklyTransactions();
   }, [selectedWeek]);
 
-  const groupedTransactions = transactions.reduce((acc: any, t: any) => {
-    const date = t.date;
-    if (!acc[date]) acc[date] = [];
-    acc[date].push(t);
-    return acc;
-  }, {});
+  const handleDeleteClick = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedTxId(id);
+    setIsModalOpen(true);
+  };
 
-  const sortedDates = Object.keys(groupedTransactions).sort((a, b) => dayjs(a).isBefore(dayjs(b)) ? -1 : 1);
+  const handleDeleteConfirm = async (id: string) => {
+    setIsModalOpen(false);
+    const txToDelete = transactions.find((t: any) => t._id === id);
+    const url = txToDelete?.isFinancial
+      ? `/api/finance/transactions?id=${id}`
+      : `/api/transactions/${id}`;
+
+    try {
+      const res = await fetch(url, { method: "DELETE" });
+      if (res.ok) {
+        setTransactions(prev => prev.filter(t => t._id !== id));
+      }
+    } catch (error) {
+      console.error("Failed to delete", error);
+    }
+  };
+
+  const uniqueParties = Array.from(
+    new Set(transactions.map((t: any) => t.branchId?.name || t.party || "-"))
+  ).filter(p => p !== "-");
+
+  const filteredTransactions = transactions.filter((t: any) => {
+    // Logic: show today's and all if showProtected is true
+    const isPublic = t.date === today;
+    if (!showProtected && !isPublic) return false;
+
+    const typeMatch = !typeFilter || t.type === typeFilter;
+    const partyName = t.branchId?.name || t.party || "-";
+    const partyMatch = !partyFilter || partyName === partyFilter;
+    return typeMatch && partyMatch;
+  });
 
   return (
-    <div className="bg-gray-700 p-4 rounded-lg mt-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-gray-600 pb-4">
-        <div>
-          <h3 className="text-xl font-bold text-blue-400">سجل عمليات الأسبوع</h3>
-          <p className="text-gray-400 text-sm mt-1">عرض العمليات حسب الأسبوع (يبدأ من السبت)</p>
-        </div>
-
-
-        {showProtected && (
-          <div className="flex items-center gap-3">
-            <label className="text-gray-300">اختر الأسبوع:</label>
-            <select
-              className="bg-gray-800 border border-gray-600 text-white rounded-lg p-2 focus:ring-2 focus:ring-blue-500"
-              value={selectedWeek.format("YYYY-MM-DD")}
-              onChange={(e) => setSelectedWeek(dayjs(e.target.value))}
+    <div className="bg-[#1c2127]/50 border border-[#3b4754] rounded-2xl shadow-xl overflow-hidden">
+      {/* Enhanced Header with Filters */}
+      <div className="bg-[#1b2127] p-4 md:p-6 border-b border-[#3b4754]">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+          {/* Title Section */}
+          <div className="flex items-center gap-4">
+            <div
+              onClick={() => setIsOpen(!isOpen)}
+              className="p-3 bg-[#1173d4]/10 rounded-2xl text-[#1173d4] hover:bg-[#1173d4] hover:text-white transition-all cursor-pointer shadow-inner group"
             >
-              {weeks.map((w, i) => (
-                <option key={i} value={w.start.format("YYYY-MM-DD")}>
-                  {w.start.format("YYYY/MM/DD")} - {w.end.format("YYYY/MM/DD")}
-                </option>
-              ))}
-            </select>
-
-            <ExportButtonCSV
-              data={transactions}
-              fileName={`weekly-log-${selectedWeek.format("YYYY-MM-DD")}`}
-              label="تصدير الأسبوع"
-            />
-          </div>)}
-      </div>
-      {!showProtected ? (
-        <div className="mb-4">
-          <PasswordPrompt
-            onSuccess={() => setShowProtected(true)}
-            label="كلمة المرور لعرض التقارير المالية"
-            buttonText="تأكيد"
-          />
-        </div>
-      ) : ("")}
-
-      {showProtected && isLoading ? (
-        <div className="text-center py-10">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="text-gray-400 mt-4">جاري تحميل البيانات...</p>
-        </div>
-      ) : showProtected && transactions.length === 0 ? (
-        <div className="text-center py-10 text-gray-500 italic">
-          لا توجد عمليات مسجلة في هذا الأسبوع.
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {sortedDates.map((date) => (
-            <div key={date} className="bg-gray-800 rounded-xl overflow-hidden shadow-lg border border-gray-700">
-              <div className="bg-gray-900 px-4 py-2 border-b border-gray-700 flex justify-between items-center">
-                <span className="text-blue-300 font-bold">
-                  {dayjs(date).format("dddd")} - {date}
-                </span>
-                <span className="text-gray-500 text-xs">
-                  {groupedTransactions[date].length} عملية
-                </span>
-              </div>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-gray-400 border-b border-gray-700">
-                    <th className="p-3 text-right">النوع</th>
-                    <th className="p-3 text-right">الصنف</th>
-                    <th className="p-3 text-right">الكمية</th>
-                    <th className="p-3 text-right">المبلغ</th>
-                    <th className="p-3 text-right">الجهة</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {groupedTransactions[date].map((t: any, i: number) => (
-                    <tr key={i} className="hover:bg-gray-750 border-b border-gray-700 last:border-0 transition-colors">
-                      <td className="p-3">
-                        <div className="flex items-center gap-2">
-                          {iconMap && iconMap[t.type]}
-                          <span>{typeLabels[t.type]}</span>
-                        </div>
-                      </td>
-                      <td className="p-3">
-                        {t.isFinancial ? (
-                          <div className="flex flex-col">
-                            <span className="text-blue-300 font-bold">
-                              {t.expenseCategoryId?.name || t.category || "مصروف"}
-                              {t.expenseSubtype && ` - ${t.expenseSubtype}`}
-                            </span>
-                            {t.description && (
-                              <span className="text-xs text-gray-400 italic">
-                                {t.description}
-                              </span>
-                            )}
-                          </div>
-                        ) : (
-                          t.productId?.name || ""
-                        )}
-                      </td>
-                      <td className="p-3 text-gray-200 font-mono">
-                        {t.isFinancial ? "-" : t.quantity}
-                      </td>
-                      <td className="p-3 text-green-400 font-bold">
-                        {t.amount ? `${t.amount.toLocaleString()} د.ل` : "-"}
-                      </td>
-                      <td className="p-3">
-                        {t.branchId?.name ? (
-                          <span className="bg-blue-900/50 text-blue-200 px-2 py-0.5 rounded text-xs border border-blue-800">
-                            {t.branchId.name}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400">{t.party || "-"}</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <FaCalendarDays className="text-lg group-hover:scale-110 transition-transform" />
             </div>
-          ))}
+            <div className="flex flex-col cursor-pointer" onClick={() => setIsOpen(!isOpen)}>
+              <h3 className="text-xl font-black text-white flex items-center gap-2">
+                سجل العمليات الأسبوعي
+                {isOpen ? <FaChevronUp className="text-[10px] opacity-30" /> : <FaChevronDown className="text-[10px] opacity-30" />}
+              </h3>
+              <p className="text-[#9cabba] text-[10px] font-bold uppercase tracking-widest opacity-60">تتبع وحماية البيانات المالية</p>
+            </div>
+          </div>
+
+          {isOpen && (
+            <div className="flex flex-wrap items-center gap-4 xl:justify-end flex-1">
+              {/* Filter Group */}
+              <div className="flex flex-wrap items-center gap-3 bg-[#101922]/50 p-1.5 rounded-2xl border border-[#3b4754]/50">
+                <div className="flex flex-col h-11 justify-center px-4 bg-[#101922] rounded-xl border border-[#3b4754]/50 min-w-[180px]">
+                  <span className="text-[9px] text-[#1173d4] font-black uppercase tracking-tighter mb-0.5">نطاق الأسبوع</span>
+                  <select
+                    className="bg-transparent border-none text-white text-[11px] font-bold focus:ring-0 outline-none w-full p-0 cursor-pointer"
+                    value={selectedWeek.format("YYYY-MM-DD")}
+                    onChange={(e) => setSelectedWeek(dayjs(e.target.value))}
+                  >
+                    {weeks.map((w, i) => (
+                      <option key={i} value={w.start.format("YYYY-MM-DD")} className="bg-[#1b2127]">
+                        {w.start.format("D MMM")} - {w.end.format("D MMM YYYY")}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2 bg-[#101922] rounded-xl border border-[#3b4754]/50 px-3 h-11">
+                  <span className="text-[9px] text-[#9cabba] font-black uppercase whitespace-nowrap">النوع:</span>
+                  <select
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value)}
+                    className="bg-transparent border-none text-white text-[11px] font-bold focus:ring-0 outline-none cursor-pointer"
+                  >
+                    <option value="" className="bg-[#1b2127]">الكل</option>
+                    {Object.entries(typeLabels).map(([val, label]) => (
+                      <option key={val} value={val} className="bg-[#1b2127]">{label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2 bg-[#101922] rounded-xl border border-[#3b4754]/50 px-3 h-11">
+                  <span className="text-[9px] text-[#9cabba] font-black uppercase whitespace-nowrap">الجهة:</span>
+                  <select
+                    value={partyFilter}
+                    onChange={(e) => setPartyFilter(e.target.value)}
+                    className="bg-transparent border-none text-white text-[11px] font-bold focus:ring-0 outline-none cursor-pointer"
+                  >
+                    <option value="" className="bg-[#1b2127]">الكل</option>
+                    {uniqueParties.map((p: any) => (
+                      <option key={p} value={p} className="bg-[#1b2127]">{p}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Action Group */}
+              <div className="flex items-center gap-2">
+                <ExportButtonCSV
+                  data={filteredTransactions}
+                  fileName={`log-${selectedWeek.format("YYYY-MM-DD")}`}
+                  label="تصدير السجل"
+                />
+                {(typeFilter || partyFilter) && (
+                  <button
+                    onClick={() => { setTypeFilter(""); setPartyFilter(""); }}
+                    className="size-11 flex items-center justify-center bg-red-400/5 text-red-400 border border-red-400/20 hover:bg-red-400 hover:text-white rounded-xl transition-all shadow-sm"
+                    title="إعادة تعيين الفلاتر"
+                  >
+                    <FaFilter className="text-xs" />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {isOpen && (
+        <div className="p-0">
+          {!showProtected ? (
+            <div className="flex flex-col gap-6 p-6">
+              {/* Public Today's Section */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-[#1173d4] font-bold text-xs bg-[#1173d4]/10 px-3 py-1 rounded-full border border-[#1173d4]/20">
+                    عمليات اليوم ({dayjs().format("D MMMM")})
+                  </span>
+                  <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-[#3b4754]"></div>
+                </div>
+
+                <DataTable
+                  data={transactions.filter(t => t.date === today)}
+                  isLoading={isLoading}
+                  emptyMessage="لا توجد عمليات مسجلة لهذا اليوم"
+                  columns={[
+                    {
+                      header: "التاريخ",
+                      className: "p-4 text-xs font-bold",
+                      render: (t: any) => <span>{dayjs(t.date).format("D/M")}</span>
+                    },
+                    {
+                      header: "النوع",
+                      className: "p-4",
+                      render: (t: any) => (
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${t.type === 'purchase' ? 'bg-green-500/10 text-green-500' :
+                            t.type === 'outgoing' ? 'bg-red-500/10 text-red-500' :
+                              'bg-orange-500/10 text-orange-500'
+                            }`}>
+                            {typeLabels[t.type]}
+                          </span>
+                        </div>
+                      )
+                    },
+                    {
+                      header: "البيان",
+                      className: "p-4 text-right flex-1",
+                      render: (t: any) => (
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold">{t.isFinancial ? (t.expenseCategoryId?.name || t.category) : t.productId?.name}</span>
+                          <span className="text-[10px] text-[#9cabba]">{t.branchId?.name || t.party || "-"}</span>
+                        </div>
+                      )
+                    },
+                    {
+                      header: "الكمية / المبلغ",
+                      className: "p-4 text-center",
+                      render: (t: any) => (
+                        <span className={`font-black ${t.isFinancial ? 'text-orange-500' : 'text-white'}`}>
+                          {t.isFinancial ? `${t.amount?.toLocaleString()} د.ل` : t.quantity}
+                        </span>
+                      )
+                    }
+                  ]}
+                />
+              </div>
+
+              {/* Password Prompt for Full History */}
+              <div className="bg-[#1173d4]/5 border border-[#1173d4]/20 rounded-2xl p-8 max-w-lg mx-auto w-full text-center">
+                <h4 className="text-white font-bold mb-2">عرض السجل الكامل</h4>
+                <p className="text-[#9cabba] text-xs mb-6">يرجى إدخال كلمة المرور لعرض كامل عمليات الأسبوع والبيانات المالية</p>
+                <PasswordPrompt
+                  onSuccess={() => setShowProtected(true)}
+                  label="كلمة المرور"
+                  buttonText="فتح السجل الكامل"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="bg-[#1c2127]/30">
+              <DataTable
+                data={filteredTransactions}
+                isLoading={isLoading}
+                emptyMessage="لا توجد نتائج مطابقة"
+                columns={[
+                  {
+                    header: "التاريخ",
+                    className: "p-4 font-bold text-[#9cabba] text-xs",
+                    render: (t: any) => <div className="flex flex-col">
+                      <span>{dayjs(t.date).format("dddd")}</span>
+                      <span className="text-[10px] opacity-70">{t.date}</span>
+                    </div>
+                  },
+                  {
+                    header: "النوع",
+                    render: (t: any) => (
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${t.type === 'purchase' ? 'bg-green-500/20 text-green-500' :
+                          t.type === 'outgoing' ? 'bg-red-500/20 text-red-500' :
+                            t.type === 'incoming' ? 'bg-yellow-500/20 text-yellow-500' :
+                              t.type === 'damaged' ? 'bg-purple-500/20 text-purple-500' :
+                                'bg-orange-500/20 text-orange-500'
+                          }`}>
+                          <span className="material-symbols-outlined text-lg">
+                            {t.type === 'purchase' ? 'shopping_cart' :
+                              t.type === 'outgoing' ? 'upload' :
+                                t.type === 'incoming' ? 'history' :
+                                  t.type === 'damaged' ? 'delete' :
+                                    'payments'}
+                          </span>
+                        </div>
+                        <span className="font-bold text-xs">{typeLabels[t.type]}</span>
+                      </div>
+                    )
+                  },
+                  {
+                    header: "الجهة / الصنف",
+                    className: "p-4 text-right",
+                    render: (t: any) => (
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-white">
+                          {t.isFinancial ? (t.expenseCategoryId?.name || t.category) : t.productId?.name}
+                        </span>
+                        <span className="text-[10px] text-[#9cabba] font-medium">
+                          {t.branchId?.name || t.party || "بدون جهة"}
+                          {t.isFinancial && t.expenseSubtype && ` • ${t.expenseSubtype}`}
+                        </span>
+                      </div>
+                    )
+                  },
+                  {
+                    header: "كمية",
+                    className: "p-4 text-center font-black",
+                    render: (t: any) => <span>{t.isFinancial ? "-" : t.quantity}</span>
+                  },
+                  {
+                    header: "المبلغ",
+                    className: "p-4 text-center",
+                    render: (t: any) => (
+                      <span className={`font-black text-sm text-orange-500`}>
+                        {t.isFinancial ? `${t.amount?.toLocaleString()} د.ل` : "-"}
+                      </span>
+                    )
+                  },
+                  {
+                    header: "",
+                    className: "p-4 text-center w-10",
+                    render: (t: any) => (
+                      <button
+                        onClick={(e) => handleDeleteClick(t._id, e)}
+                        className="p-2 text-red-500/30 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                      >
+                        <FaTrashCan className="text-sm" />
+                      </button>
+                    )
+                  }
+                ]}
+                showTotal={showProtected}
+                rowClassName={(t: any) => t.date === today ? "bg-[#1173d4]/5" : ""}
+              />
+            </div>
+          )}
         </div>
       )}
 
-
+      <Modal
+        open={isModalOpen}
+        type="delete"
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={() => { }}
+        products={[]}
+        selectedDate={null}
+        transactionId={selectedTxId}
+        onDeleteConfirm={handleDeleteConfirm}
+      />
     </div>
   );
 }

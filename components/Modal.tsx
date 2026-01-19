@@ -9,6 +9,7 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
   const [expenseCategories, setExpenseCategories] = useState<any[]>([]);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [amounts, setAmounts] = useState<Record<string, number>>({});
+  const [contacts, setContacts] = useState<any[]>([]);
 
   // جلب الفروع عند فتح النافذة
   React.useEffect(() => {
@@ -25,6 +26,11 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
         .then((res) => res.json())
         .then((data) => setExpenseCategories(data))
         .catch((err) => console.error("Failed to fetch expense categories", err));
+
+      fetch("/api/contacts")
+        .then((res) => res.json())
+        .then((data) => setContacts(data))
+        .catch((err) => console.error("Failed to fetch contacts", err));
     }
   }, [open]);
 
@@ -75,7 +81,7 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
     } else if (type === "dailyExpense") {
       const selectedCategory = expenseCategories.find(c => c._id === form.expenseCategoryId);
       const categoryName = selectedCategory ? selectedCategory.name : "أخرى";
-      
+
       const expenseData = {
         type: "expense",
         amount: Number(form.amount),
@@ -96,8 +102,8 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
     } else if (type !== "delete") {
       // إعداد البيانات للإرسال الجماعي
       const transactionsToSubmit = [];
-      const branchName = form.branchId 
-        ? branches.find(b => b._id === form.branchId)?.name 
+      const branchName = form.branchId
+        ? branches.find(b => b._id === form.branchId)?.name
         : form.party;
 
       for (const [productId, quantity] of Object.entries(quantities)) {
@@ -111,22 +117,22 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
             branchId: form.branchId,
             date: selectedDate,
           };
-          
+
           if (type === "purchase" && product) {
-             // حساب المبلغ تلقائياً للمشتريات (الكمية * سعر الشراء)
-             transaction.amount = quantity * (product.purchasePrice || 0);
+            // حساب المبلغ تلقائياً للمشتريات (الكمية * سعر الشراء)
+            transaction.amount = quantity * (product.purchasePrice || 0);
           } else if (type === "sale" && product) {
-             // استخدام المبلغ المدخل يدوياً أو الحساب التلقائي كاحتياطي
-             transaction.amount = amounts[productId] !== undefined && amounts[productId] !== 0
-               ? amounts[productId]
-               : quantity * (product.sellingPrice || 0);
-             
-             // تنبيه إذا كان السعر صفراً
-             if (transaction.amount === 0) {
-               console.warn(`Product ${product.name} has no amount defined.`);
-             }
+            // استخدام المبلغ المدخل يدوياً أو الحساب التلقائي كاحتياطي
+            transaction.amount = amounts[productId] !== undefined && amounts[productId] !== 0
+              ? amounts[productId]
+              : quantity * (product.sellingPrice || 0);
+
+            // تنبيه إذا كان السعر صفراً
+            if (transaction.amount === 0) {
+              console.warn(`Product ${product.name} has no amount defined.`);
+            }
           }
-          
+
           transactionsToSubmit.push(transaction);
         }
       }
@@ -179,9 +185,9 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
       {(type === "outgoing" || type === "incoming" || type === "damaged" || type === "purchase" || type === "sale" || type === "dailyExpense") ? (
         <div className="mb-4">
           <label className="block mb-2 text-sm font-medium text-gray-300">الفرع / الجهة</label>
-          <select 
-            name="branchId" 
-            onChange={handleChange} 
+          <select
+            name="branchId"
+            onChange={handleChange}
             className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5"
             required={type !== "purchase" && type !== "sale" && type !== "dailyExpense"} // الشراء والبيع والمصاريف قد لا يكون من فرع
           >
@@ -192,15 +198,48 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
               </option>
             ))}
           </select>
-           {/* خيار إدخال يدوي للجهة */}
-           {!form.branchId && (
-            <input 
-              name="party" 
-              onChange={handleChange} 
-              className="mt-2 bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5" 
-              placeholder="أو أدخل اسم الجهة يدوياً" 
-            />
-           )}
+          <select
+            name="party"
+            onChange={handleChange}
+            className="mt-2 bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5"
+            value={form.party || ""}
+          >
+            <option value="">اختر الجهة (عميل/مورد)</option>
+            {contacts.map((contact) => (
+              <option key={contact._id} value={contact.name}>
+                {contact.name} ({contact.type === 'customer' ? 'عميل' : contact.type === 'supplier' ? 'مورد' : 'أخرى'})
+              </option>
+            ))}
+            <option value="ADD_NEW">+ إضافة جهة جديدة</option>
+          </select>
+          {form.party === "ADD_NEW" && (
+            <div className="mt-2 p-3 bg-gray-900 rounded-lg border border-gray-700">
+              <input
+                id="newContactName"
+                placeholder="اسم الجهة الجديدة"
+                className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2"
+                onKeyDown={async (e: any) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const name = e.target.value;
+                    if (name) {
+                      const res = await fetch("/api/contacts", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name, type: 'other' })
+                      });
+                      if (res.ok) {
+                        const newContact = await res.json();
+                        setContacts([...contacts, newContact]);
+                        setForm({ ...form, party: newContact.name });
+                      }
+                    }
+                  }
+                }}
+              />
+              <p className="text-xs text-gray-400 mt-1">اضغط Enter للحفظ</p>
+            </div>
+          )}
         </div>
       ) : null}
 
@@ -209,9 +248,9 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
           <div>
             <label className="block mb-2 text-sm font-medium text-gray-300">نوع المصروف</label>
             <div className="flex gap-2">
-              <select 
-                name="expenseCategoryId" 
-                onChange={handleChange} 
+              <select
+                name="expenseCategoryId"
+                onChange={handleChange}
                 className="bg-gray-700 border border-gray-600 text-white rounded-lg flex-1 p-2.5"
                 required
               >
@@ -223,7 +262,7 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
                 ))}
                 <option value="other">أخرى (إدخال يدوي)</option>
               </select>
-              <button 
+              <button
                 type="button"
                 onClick={() => window.open('/expense-categories', '_blank')}
                 className="bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-lg transition"
@@ -233,10 +272,10 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
               </button>
             </div>
             {form.expenseCategoryId === "other" && (
-              <input 
-                name="expenseSubtype" 
-                onChange={handleChange} 
-                className="mt-2 bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5" 
+              <input
+                name="expenseSubtype"
+                onChange={handleChange}
+                className="mt-2 bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5"
                 placeholder="اكتب نوع المصروف هنا"
                 required
               />
@@ -244,29 +283,29 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
           </div>
           <div>
             <label className="block mb-2 text-sm font-medium text-gray-300">المبلغ</label>
-            <input 
-              name="amount" 
-              type="number" 
-              step="0.01" 
-              onChange={handleChange} 
-              className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5" 
+            <input
+              name="amount"
+              type="number"
+              step="0.01"
+              onChange={handleChange}
+              className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5"
               placeholder="0.00"
-              required 
+              required
             />
           </div>
           <div>
             <label className="block mb-2 text-sm font-medium text-gray-300">الوصف</label>
-            <textarea 
-              name="description" 
-              onChange={handleChange} 
-              className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5" 
+            <textarea
+              name="description"
+              onChange={handleChange}
+              className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5"
               placeholder="وصف إضافي للمصروف..."
               rows={3}
             />
           </div>
         </div>
       ) : (
-        <BulkTransactionTable 
+        <BulkTransactionTable
           products={products}
           dailyReport={dailyReport}
           type={type}

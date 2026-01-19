@@ -9,6 +9,7 @@ interface Branch {
   name: string;
   location?: string;
   isActive: boolean;
+  settlementType: "daily" | "weekly";
 }
 
 export default function BranchesPage() {
@@ -17,7 +18,7 @@ export default function BranchesPage() {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
-  const [formData, setFormData] = useState({ name: "", location: "" });
+  const [formData, setFormData] = useState({ name: "", location: "", settlementType: "daily" });
 
   useEffect(() => {
     if (isAuthorized) {
@@ -54,7 +55,7 @@ export default function BranchesPage() {
 
       if (res.ok) {
         setShowModal(false);
-        setFormData({ name: "", location: "" });
+        setFormData({ name: "", location: "", settlementType: "daily" });
         setEditingBranch(null);
         fetchBranches();
       } else {
@@ -83,10 +84,14 @@ export default function BranchesPage() {
   const openModal = (branch?: Branch) => {
     if (branch) {
       setEditingBranch(branch);
-      setFormData({ name: branch.name, location: branch.location || "" });
+      setFormData({
+        name: branch.name,
+        location: branch.location || "",
+        settlementType: branch.settlementType || "daily"
+      });
     } else {
       setEditingBranch(null);
-      setFormData({ name: "", location: "" });
+      setFormData({ name: "", location: "", settlementType: "daily" });
     }
     setShowModal(true);
   };
@@ -134,6 +139,7 @@ export default function BranchesPage() {
               <tr>
                 <th className="px-6 py-4">اسم الفرع</th>
                 <th className="px-6 py-4">الموقع</th>
+                <th className="px-6 py-4">نوع التسوية</th>
                 <th className="px-6 py-4 text-center">الإجراءات</th>
               </tr>
             </thead>
@@ -157,6 +163,11 @@ export default function BranchesPage() {
                       {branch.name}
                     </td>
                     <td className="px-6 py-4">{branch.location || "-"}</td>
+                    <td className="px-6 py-4">
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${branch.settlementType === 'weekly' ? 'bg-purple-900 text-purple-300' : 'bg-blue-900 text-blue-300'}`}>
+                        {branch.settlementType === 'weekly' ? 'أسبوعي' : 'يومي'}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 flex justify-center gap-4">
                       <button
                         onClick={() => openModal(branch)}
@@ -210,6 +221,19 @@ export default function BranchesPage() {
                   }
                   className="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-blue-500 outline-none"
                 />
+              </div>
+              <div>
+                <label className="block text-gray-300 mb-2">نوع التسوية</label>
+                <select
+                  value={formData.settlementType}
+                  onChange={(e) =>
+                    setFormData({ ...formData, settlementType: e.target.value as "daily" | "weekly" })
+                  }
+                  className="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                >
+                  <option value="daily">يومي (تسوية كل يوم)</option>
+                  <option value="weekly">أسبوعي (تسوية في نهاية الأسبوع)</option>
+                </select>
               </div>
               <div className="flex gap-4 mt-8">
                 <button

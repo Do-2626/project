@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
 interface PasswordPromptProps {
-  onSuccess: () => void;
+  onSuccess: (role?: string) => void;
   label?: string;
   buttonText?: string;
 }
@@ -24,7 +24,7 @@ const PasswordPrompt: React.FC<PasswordPromptProps> = ({ onSuccess, label = "ك�
       if (res.ok && data.success) {
         setPassword("");
         setError("");
-        onSuccess();
+        onSuccess(data.role);
       } else {
         setError("كلمة المرور غير صحيحة");
       }

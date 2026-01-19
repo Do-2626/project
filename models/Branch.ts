@@ -4,6 +4,11 @@ const BranchSchema = new Schema({
   name: { type: String, required: true, unique: true },
   location: { type: String },
   isActive: { type: Boolean, default: true },
+  settlementType: {
+    type: String,
+    enum: ['daily', 'weekly'],
+    default: 'daily'
+  },
   createdAt: { type: Date, default: Date.now }
 });
 

@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
 import Product from "@/models/Product";
 
-// كلمة المرور الحقيقية محفوظة فقط في الخادم
-const PASSWORD = "admin2626";
+// كلمات المرور محفوظة فقط في الخادم
+const MANAGER_PASSWORD = "admin2626";
+const DELEGATE_PASSWORD = "user2626";
 
 export async function POST(req: Request) {
   try {
     const { password } = await req.json();
-    if (password === PASSWORD) {
-      return NextResponse.json({ success: true });
+    if (password === MANAGER_PASSWORD) {
+      return NextResponse.json({ success: true, role: "manager" });
+    } else if (password === DELEGATE_PASSWORD) {
+      return NextResponse.json({ success: true, role: "delegate" });
     } else {
       return NextResponse.json(
         { success: false, error: "كلمة المرور غير صحيحة" },

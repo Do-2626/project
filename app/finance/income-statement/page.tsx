@@ -32,6 +32,7 @@ export default function IncomeStatement() {
   const [previousData, setPreviousData] = useState<IncomeStatementData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [expenseStats, setExpenseStats] = useState<any[]>([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -39,7 +40,7 @@ export default function IncomeStatement() {
     const today = new Date();
     const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
     const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    
+
     setStartDate(firstDay.toISOString().split('T')[0]);
     setEndDate(lastDay.toISOString().split('T')[0]);
   }, []);
@@ -49,20 +50,20 @@ export default function IncomeStatement() {
       setError('يرجى تحديد نطاق التاريخ');
       return;
     }
-    
+
     // التحقق من أن تاريخ البداية يسبق تاريخ النهاية
     const startDateObj = new Date(startDate);
     const endDateObj = new Date(endDate);
-    
+
     if (startDateObj > endDateObj) {
       setError('تاريخ البداية يجب أن يكون قبل تاريخ النهاية');
       return;
     }
-    
+
     // التحقق من أن التاريخ ليس في المستقبل
     const today = new Date();
     today.setHours(23, 59, 59, 999); // نهاية اليوم الحالي
-    
+
     if (endDateObj > today) {
       setError('لا يمكن عرض بيانات لتاريخ في المستقبل. يرجى اختيار تاريخ حالي أو سابق.');
       return;
@@ -75,28 +76,28 @@ export default function IncomeStatement() {
       // جلب البيانات الحالية
       const res = await fetch(`/api/finance/income-statement?startDate=${startDate}&endDate=${endDate}`);
       const data = await res.json();
-      
+
       if (res.ok) {
         setIncomeData(data);
         // إعادة تعيين أي رسائل خطأ سابقة
         setError('');
-        
+
         // حساب الفترة السابقة المماثلة (نفس المدة)
         const currentStartDate = new Date(startDate);
         const currentEndDate = new Date(endDate);
         const dateDiff = currentEndDate.getTime() - currentStartDate.getTime();
-        
+
         const previousEndDate = new Date(currentStartDate.getTime() - 1); // يوم قبل بداية الفترة الحالية
         const previousStartDate = new Date(previousEndDate.getTime() - dateDiff);
-        
+
         // تنسيق التواريخ إلى YYYY-MM-DD
         const formattedPrevStartDate = previousStartDate.toISOString().split('T')[0];
         const formattedPrevEndDate = previousEndDate.toISOString().split('T')[0];
-        
+
         // جلب بيانات الفترة السابقة
         const prevRes = await fetch(`/api/finance/income-statement?startDate=${formattedPrevStartDate}&endDate=${formattedPrevEndDate}`);
         const prevData = await prevRes.json();
-        
+
         if (prevRes.ok) {
           setPreviousData(prevData);
         } else {
@@ -114,9 +115,20 @@ export default function IncomeStatement() {
     }
   };
 
+  const fetchExpenseStats = async () => {
+    try {
+      const res = await fetch('/api/expenses/stats');
+      const data = await res.json();
+      if (res.ok) setExpenseStats(data);
+    } catch (err) {
+      console.error("Failed to fetch expense stats", err);
+    }
+  };
+
   useEffect(() => {
     if (isAuthorized && startDate && endDate) {
       fetchIncomeStatement();
+      fetchExpenseStats();
     }
   }, [isAuthorized, startDate, endDate]);
 
@@ -125,9 +137,9 @@ export default function IncomeStatement() {
       <div className="container mx-auto p-4 max-w-4xl">
         <h1 className="text-2xl font-bold mb-6 text-center text-white">قائمة الدخل</h1>
         <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
-          <PasswordPrompt 
-            onSuccess={() => setIsAuthorized(true)} 
-            label="أدخل كلمة المرور للوصول إلى قائمة الدخل" 
+          <PasswordPrompt
+            onSuccess={() => setIsAuthorized(true)}
+            label="أدخل كلمة المرور للوصول إلى قائمة الدخل"
             buttonText="عرض قائمة الدخل"
           />
         </div>
@@ -141,10 +153,10 @@ export default function IncomeStatement() {
         <h1 className="text-2xl font-bold text-white">قائمة الدخل</h1>
         <div className="flex gap-2">
           {incomeData && (
-            <ExportButton 
-              data={incomeData} 
-              fileName={`income-statement-${startDate}-to-${endDate}`} 
-              label="تصدير البيانات" 
+            <ExportButton
+              data={incomeData}
+              fileName={`income-statement-${startDate}-to-${endDate}`}
+              label="تصدير البيانات"
             />
           )}
           <Link href="/" className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded transition">
@@ -164,7 +176,7 @@ export default function IncomeStatement() {
             <Calendar selectedDate={endDate} onChange={setEndDate} />
           </div>
           <div className="flex items-end">
-            <button 
+            <button
               onClick={fetchIncomeStatement}
               disabled={loading}
               className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded transition w-full"
@@ -193,6 +205,31 @@ export default function IncomeStatement() {
               <KPICards data={incomeData} />
               <TrendAnalysis data={incomeData} previousData={previousData} />
               <IncomeStatementTable data={incomeData} />
+
+              <div className="mt-8 bg-gray-800 p-6 rounded-lg shadow-lg">
+                <h3 className="text-xl font-bold mb-4 text-blue-400">تحليل مصاريف الفروع (الوقود والصيانة)</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-right border-collapse">
+                    <thead>
+                      <tr className="bg-gray-700 text-gray-200">
+                        <th className="p-3 border border-gray-600">الفرع</th>
+                        <th className="p-3 border border-gray-600">نوع المصروف</th>
+                        <th className="p-3 border border-gray-600">الإجمالي</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {expenseStats.filter(s => s.categoryName === 'وقود' || s.categoryName === 'صيانة').map((stat, i) => (
+                        <tr key={i} className="hover:bg-gray-700 transition">
+                          <td className="p-3 border border-gray-600">{stat.branchName || 'عام'}</td>
+                          <td className="p-3 border border-gray-600 font-bold text-orange-400">{stat.categoryName}</td>
+                          <td className="p-3 border border-gray-600 font-bold text-green-400">{stat.totalAmount.toFixed(2)} جنيه</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
               <div className="mt-6">
                 <IncomeStatementChart data={incomeData} />
               </div>
