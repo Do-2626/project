@@ -80,7 +80,7 @@ export default function InventoryPage() {
       <div className="fixed inset-0 bg-[radial-gradient(circle_at_top_right,#1a2533_0%,#101922_100%)] -z-10"></div>
 
       {/* Header / TopAppBar */}
-      <header className="sticky top-0 z-50 flex items-center bg-[#101922]/80 backdrop-blur-md p-4 border-b border-white/10 justify-between">
+      <header className="z-50 flex items-center bg-[#101922]/80 backdrop-blur-md p-4 border-b border-white/10 justify-between">
         <div className="text-white flex size-10 shrink-0 items-center justify-center bg-white/5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer">
           <FaBars />
         </div>
@@ -98,7 +98,7 @@ export default function InventoryPage() {
         <section className="px-4 pt-10">
           <div
             onClick={openDatePicker}
-            className="flex flex-col gap-2 max-w-sm cursor-pointer group"
+            className="flex flex-col gap-2 max-w-sm cursor-pointer group appearance-none [-webkit-appearance:none] [-moz-appearance:none]"
           >
             <label className="text-[#9cabba] text-sm font-bold pr-1 flex items-center gap-2 group-hover:text-[#1173d4] transition-colors">
               <FaCalendarDays className="text-[#1173d4] text-xs" />
@@ -181,17 +181,17 @@ export default function InventoryPage() {
               columns={[
                 {
                   header: "الصنف",
-                  className: "p-4 md:p-6 text-right",
+                  className: "text-right",
                   render: (r: any) => <span className="text-sm md:text-base font-bold text-gray-200">{r.product.name}</span>
                 },
                 {
                   header: "بداية اليوم",
-                  className: "p-4 md:p-6 text-center",
+                  className: "text-center",
                   render: (r: any) => <span className="text-[#9cabba] font-mono font-bold text-xs">{r.startQty}</span>
                 },
                 {
                   header: "نهاية اليوم",
-                  className: "p-4 md:p-6 text-center w-32",
+                  className: "text-center w-32",
                   render: (r: any) => (
                     <div className="bg-[#101922] py-2 px-4 rounded-xl border border-[#3b4754]/50 inline-block min-w-[60px] font-black text-[#1173d4] text-lg shadow-inner">
                       {r.endQty}

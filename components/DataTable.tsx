@@ -91,7 +91,7 @@ export default function DataTable<T>({
                                 {columns.map((col, colIdx) => (
                                     <td
                                         key={colIdx}
-                                        className={`p-4 md:p-5 transition-all duration-300 ${col.className || ""}`}
+                                        className={`transition-all duration-300 ${col.className || ""}`}
                                     >
                                         {col.render
                                             ? col.render(item, rowIdx)
