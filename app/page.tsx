@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Package, Receipt, BarChart3, TrendingUp, GitBranch } from "lucide-react";
+import { FaTruckLoading } from "react-icons/fa";
 import Link from "next/link";
 import Branch from "@/models/Branch";
 // import { TodoItem } from "@/components/ui/todo-item";
@@ -31,8 +32,8 @@ export default function Home() {
 
           <Link href="/inventory/expected-sales" className="bg-gradient-to-br from-cyan-600 to-cyan-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col items-center justify-center text-center group">
             <TrendingUp className="h-12 w-12 text-white mb-4 group-hover:scale-110 transition-transform" />
-            <h2 className="text-xl font-bold text-white">المبيعات المتوقعة</h2>
-            <p className="text-cyan-100 mt-2">تحميل ومرتجع الفروع</p>
+            <h2 className="text-xl font-bold text-white">التقارير</h2>
+            <p className="text-cyan-100 mt-2">عرض تقارير المبيعات والمصروفات</p>
           </Link>
 
           <Link href="/finance/transactions" className="bg-gradient-to-br from-green-600 to-green-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col items-center justify-center text-center group">
@@ -52,6 +53,14 @@ export default function Home() {
             <h2 className="text-xl font-bold text-white">قائمة الفروع</h2>
             <p className="text-purple-100 mt-2">
               إضافة وعرض الفروع
+            </p>
+          </Link>
+
+          <Link href="/suppliers" className="bg-gradient-to-br from-indigo-600 to-indigo-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col items-center justify-center text-center group">
+            <FaTruckLoading className="h-12 w-12 text-white mb-4 group-hover:scale-110 transition-transform" />
+            <h2 className="text-xl font-bold text-white">إدارة الموردين</h2>
+            <p className="text-indigo-100 mt-2">
+              إضافة وعرض الموردين
             </p>
           </Link>
         </div>

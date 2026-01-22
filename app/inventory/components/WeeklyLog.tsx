@@ -251,6 +251,18 @@ export default function WeeklyLog({ iconMap }: WeeklyLogProps) {
                           {t.isFinancial ? `${t.amount?.toLocaleString()} د.ل` : t.quantity}
                         </span>
                       )
+                    },
+                    {
+                      header: "",
+                      className: "p-4 text-center w-10",
+                      render: (t: any) => (
+                        <button
+                          onClick={(e) => handleDeleteClick(t._id, e)}
+                          className="p-2 text-red-500/30 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                        >
+                          <FaTrashCan className="text-sm" />
+                        </button>
+                      )
                     }
                   ]}
                 />
@@ -352,7 +364,8 @@ export default function WeeklyLog({ iconMap }: WeeklyLogProps) {
             </div>
           )}
         </div>
-      )}
+      )
+      }
 
       <Modal
         open={isModalOpen}
@@ -364,6 +377,6 @@ export default function WeeklyLog({ iconMap }: WeeklyLogProps) {
         transactionId={selectedTxId}
         onDeleteConfirm={handleDeleteConfirm}
       />
-    </div>
+    </div >
   );
 }

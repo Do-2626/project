@@ -6,7 +6,7 @@ import Link from "next/link";
 import {
   FaBars, FaBell, FaCalendarDays, FaArrowRight,
   FaArrowUp, FaArrowDown, FaCartPlus, FaWallet, FaBan,
-  FaPlus, FaLock, FaCircleInfo, FaCircle
+  FaPlus, FaLock, FaCircleInfo, FaCircle, FaRightLeft
 } from "react-icons/fa6";
 
 import InventoryTable from "@/app/inventory/components/InventoryTable";
@@ -131,11 +131,12 @@ export default function InventoryPage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
             {[
               { type: 'outgoing', label: 'تحميل', icon: <FaArrowUp />, color: 'red' },
               { type: 'incoming', label: 'مرتجع', icon: <FaArrowDown />, color: 'yellow' },
               { type: 'purchase', label: 'شراء', icon: <FaCartPlus />, color: 'green' },
+              { type: 'transfer', label: 'تحويل', icon: <FaRightLeft />, color: 'blue' },
               { type: 'dailyExpense', label: 'مصروف', icon: <FaWallet />, color: 'orange' },
               { type: 'damaged', label: 'تالف', icon: <FaBan />, color: 'purple' },
             ].map((btn) => (

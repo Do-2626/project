@@ -99,6 +99,50 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(expenseData),
       });
+    } else if (type === "transfer") {
+      const transactionsToSubmit = [];
+      const fromBranch = branches.find(b => b._id === form.fromBranchId);
+      const toBranch = branches.find(b => b._id === form.toBranchId);
+
+      if (!fromBranch || !toBranch) {
+        alert("يرجى اختيار الفرع المحول منه والفرع المحول إليه");
+        return;
+      }
+
+      for (const [productId, quantity] of Object.entries(quantities)) {
+        if (quantity > 0) {
+          // 1. مرتجع من الفرع الأول إلى المخزون
+          transactionsToSubmit.push({
+            productId,
+            quantity,
+            type: "incoming",
+            party: "المخزون (تحويل)",
+            branchId: form.fromBranchId,
+            date: selectedDate,
+          });
+
+          // 2. تحميل على الفرع الثاني من المخزون
+          transactionsToSubmit.push({
+            productId,
+            quantity,
+            type: "outgoing",
+            party: `تحويل من ${fromBranch.name}`,
+            branchId: form.toBranchId,
+            date: selectedDate,
+          });
+        }
+      }
+
+      if (transactionsToSubmit.length === 0) {
+        alert("يرجى إدخال كمية لمنتج واحد على الأقل");
+        return;
+      }
+
+      await fetch("/api/transactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(transactionsToSubmit),
+      });
     } else if (type !== "delete") {
       // إعداد البيانات للإرسال الجماعي
       const transactionsToSubmit = [];
@@ -113,24 +157,20 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
             productId,
             quantity,
             type,
-            party: branchName, // استخدام اسم الفرع كجهة
+            party: branchName || form.party, // استخدام اسم الفرع كجهة أو الجهة المدخلة
             branchId: form.branchId,
             date: selectedDate,
           };
 
           if (type === "purchase" && product) {
-            // حساب المبلغ تلقائياً للمشتريات (الكمية * سعر الشراء)
+            // المشتريات تأتي من مورد وليس من فرع
+            transaction.party = form.party;
+            transaction.branchId = null;
             transaction.amount = quantity * (product.purchasePrice || 0);
           } else if (type === "sale" && product) {
-            // استخدام المبلغ المدخل يدوياً أو الحساب التلقائي كاحتياطي
             transaction.amount = amounts[productId] !== undefined && amounts[productId] !== 0
               ? amounts[productId]
               : quantity * (product.sellingPrice || 0);
-
-            // تنبيه إذا كان السعر صفراً
-            if (transaction.amount === 0) {
-              console.warn(`Product ${product.name} has no amount defined.`);
-            }
           }
 
           transactionsToSubmit.push(transaction);
@@ -182,63 +222,114 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
   const transactionFields = (
     <>
       {/* اختيار الفرع أو الجهة - مشترك لجميع العمليات */}
-      {(type === "outgoing" || type === "incoming" || type === "damaged" || type === "purchase" || type === "sale" || type === "dailyExpense") ? (
+      {type === "transfer" ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="block mb-2 text-sm font-medium text-gray-300">الفرع المحول منه (المرتجع)</label>
+            <select
+              name="fromBranchId"
+              onChange={handleChange}
+              className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5"
+              required
+            >
+              <option value="">اختر الفرع</option>
+              {branches.map((branch) => (
+                <option key={branch._id} value={branch._id}>
+                  {branch.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block mb-2 text-sm font-medium text-gray-300">الفرع المحول إليه (التحميل)</label>
+            <select
+              name="toBranchId"
+              onChange={handleChange}
+              className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5"
+              required
+            >
+              <option value="">اختر الفرع</option>
+              {branches.map((branch) => (
+                <option key={branch._id} value={branch._id}>
+                  {branch.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      ) : (type === "outgoing" || type === "incoming" || type === "damaged" || type === "purchase" || type === "sale" || type === "dailyExpense") ? (
         <div className="mb-4">
-          <label className="block mb-2 text-sm font-medium text-gray-300">الفرع / الجهة</label>
-          <select
-            name="branchId"
-            onChange={handleChange}
-            className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5"
-            required={type !== "purchase" && type !== "sale" && type !== "dailyExpense"} // الشراء والبيع والمصاريف قد لا يكون من فرع
-          >
-            <option value="">اختر الفرع (اختياري)</option>
-            {branches.map((branch) => (
-              <option key={branch._id} value={branch._id}>
-                {branch.name}
-              </option>
-            ))}
-          </select>
-          <select
-            name="party"
-            onChange={handleChange}
-            className="mt-2 bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5"
-            value={form.party || ""}
-          >
-            <option value="">اختر الجهة (عميل/مورد)</option>
-            {contacts.map((contact) => (
-              <option key={contact._id} value={contact.name}>
-                {contact.name} ({contact.type === 'customer' ? 'عميل' : contact.type === 'supplier' ? 'مورد' : 'أخرى'})
-              </option>
-            ))}
-            <option value="ADD_NEW">+ إضافة جهة جديدة</option>
-          </select>
-          {form.party === "ADD_NEW" && (
-            <div className="mt-2 p-3 bg-gray-900 rounded-lg border border-gray-700">
-              <input
-                id="newContactName"
-                placeholder="اسم الجهة الجديدة"
-                className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2"
-                onKeyDown={async (e: any) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    const name = e.target.value;
-                    if (name) {
-                      const res = await fetch("/api/contacts", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ name, type: 'other' })
-                      });
-                      if (res.ok) {
-                        const newContact = await res.json();
-                        setContacts([...contacts, newContact]);
-                        setForm({ ...form, party: newContact.name });
+          {(type === "outgoing" || type === "incoming" || type === "damaged" || type === "dailyExpense") && (
+            <>
+              <label className="block mb-2 text-sm font-medium text-gray-300">الفرع</label>
+              <select
+                name="branchId"
+                onChange={handleChange}
+                className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5 mb-2"
+                required={type !== "dailyExpense"}
+              >
+                <option value="">اختر الفرع</option>
+                {branches.map((branch) => (
+                  <option key={branch._id} value={branch._id}>
+                    {branch.name}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
+
+          {(type === "purchase" || type === "sale" || type === "dailyExpense") && (
+            <>
+              <label className="block mb-2 text-sm font-medium text-gray-300">
+                {type === "purchase" ? "المورد" : type === "sale" ? "العميل" : "الجهة / المورد"}
+              </label>
+              <select
+                name="party"
+                onChange={handleChange}
+                className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5"
+                value={form.party || ""}
+                required={type === "purchase"}
+              >
+                <option value="">{type === "purchase" ? "اختر المورد" : "اختر الجهة"}</option>
+                {contacts
+                  .filter(c => type === "purchase" ? c.type === "supplier" : true)
+                  .map((contact) => (
+                    <option key={contact._id} value={contact.name}>
+                      {contact.name} ({contact.type === 'customer' ? 'عميل' : contact.type === 'supplier' ? 'مورد' : 'أخرى'})
+                    </option>
+                  ))}
+                <option value="ADD_NEW">+ إضافة جهة جديدة</option>
+              </select>
+
+              {form.party === "ADD_NEW" && (
+                <div className="mt-2 p-3 bg-gray-900 rounded-lg border border-gray-700">
+                  <input
+                    id="newContactName"
+                    placeholder="اسم الجهة الجديدة"
+                    className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2"
+                    onKeyDown={async (e: any) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const name = e.target.value;
+                        if (name) {
+                          const res = await fetch("/api/contacts", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ name, type: type === 'purchase' ? 'supplier' : 'other' })
+                          });
+                          if (res.ok) {
+                            const newContact = await res.json();
+                            setContacts([...contacts, newContact]);
+                            setForm({ ...form, party: newContact.name });
+                          }
+                        }
                       }
-                    }
-                  }
-                }}
-              />
-              <p className="text-xs text-gray-400 mt-1">اضغط Enter للحفظ</p>
-            </div>
+                    }}
+                  />
+                  <p className="text-xs text-gray-400 mt-1">اضغط Enter للحفظ</p>
+                </div>
+              )}
+            </>
           )}
         </div>
       ) : null}

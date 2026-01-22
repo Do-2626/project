@@ -1,0 +1,23 @@
+For all designs I ask you to make, have them be beautiful, not cookie cutter. Make webpages that are fully featured and worthy for production.
+
+When using client-side hooks (useState and useEffect) in a component that's being treated as a Server Component by Next.js, always add the "use client" directive at the top of the file.
+
+Do not write code that will trigger this error: "Warning: Extra attributes from the server: %s%s""class,style"
+
+By default, this template supports JSX syntax with Tailwind CSS classes, the shadcn/ui library, React hooks, and Lucide React for icons. Do not install other packages for UI themes, icons, etc unless absolutely necessary or I request them.
+
+Use icons from lucide-react for logos.
+
+Use stock photos from unsplash where appropriate, only valid URLs you know exist.
+
+
+
+
+- تغيير اسم صفحة المبيعات المتوقعى الى "التقارير" مع امكانية عرض مقروفات الفرع المحدد طبقا للفلاتر الموجودة للمبيعات
+
+
+- تفعيل زر الحذف فى صفحة المخزون فى قسم السجل للمستخدم العادى
+
+- صفحة لادارة الموردين مثل صفحة الفروع مع تضمينهم فى فورم المشتريات بدلا من الفروع وابقاء الفروع فقط فى فورم التحميل والمرتجع والتالف
+
+- فى صفحة المخزون اضف عملية جديدة للتحويل بين فرعين يتم اختيار الفرع المول منه والفرع المحول ليه ويظهر جدول المنتجات مع و كتابة الاعداد

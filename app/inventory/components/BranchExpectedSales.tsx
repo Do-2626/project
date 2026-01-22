@@ -118,7 +118,7 @@ export default function BranchExpectedSales() {
                         <Link href="/" className="flex items-center justify-center size-10 rounded-full hover:bg-[#3b4754]/50 transition-colors">
                             <FaArrowRight className="text-white text-xl" />
                         </Link>
-                        <h2 className="text-white text-lg md:text-xl font-bold leading-tight tracking-tight">تقرير المبيعات المتوقعة</h2>
+                        <h2 className="text-white text-lg md:text-xl font-bold leading-tight tracking-tight">تقارير المبيعات والمصروفات</h2>
                     </div>
                     {canEdit && (
                         <button
@@ -263,15 +263,13 @@ export default function BranchExpectedSales() {
                     </div>
                 </section>
 
-                {/* Info Bar */}
-                {selectedBranch && (
-                    <div className="flex items-center gap-2 text-xs font-bold text-[#0d7ff2] bg-[#0d7ff2]/10 w-fit px-3 py-1 rounded-full border border-[#0d7ff2]/30">
-                        <span className="material-symbols-outlined text-sm">info</span>
-                        نوع تسوية الفرع: {currentBranch?.settlementType === 'weekly' ? 'أسبوعي' : 'يومي'}
-                    </div>
-                )}
 
                 {/* Table Section */}
+                {selectedBranch && (<div className="flex items-center gap-3">
+                    <h3 className="text-xl font-black text-white">مبيعات الفرع - {currentBranch?.settlementType === 'weekly' ? 'أسبوعي' : 'يومي'}</h3>
+                    <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-[#3b4754]"></div>
+                </div>)}
+
                 <div className="overflow-hidden rounded-2xl border border-[#3b4754]/50 bg-[#1b2127]/50 shadow-2xl">
                     <DataTable
                         data={branchReport?.report?.filter((r: any) => r.expectedSales !== 0) || []}
@@ -339,6 +337,61 @@ export default function BranchExpectedSales() {
                         className="border-none"
                     />
                 </div>
+
+                {/* Expenses Section */}
+                {selectedBranch && (
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                            <h3 className="text-xl font-black text-white">مصروفات الفرع</h3>
+                            <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-[#3b4754]"></div>
+                        </div>
+                        <div className="overflow-hidden rounded-2xl border border-[#3b4754]/50 bg-[#1b2127]/50 shadow-2xl">
+                            <DataTable
+                                data={branchReport?.during?.filter((t: any) => t.isFinancial && t.type === 'expense') || []}
+                                isLoading={isLoading}
+                                emptyMessage="لا توجد مصروفات مسجلة لهذا الفرع في الفترة المختارة"
+                                columns={[
+                                    {
+                                        header: "التاريخ",
+                                        className: "p-4 text-xs font-bold text-gray-400",
+                                        render: (t: any) => dayjs(t.date).format("D/M/YYYY")
+                                    },
+                                    {
+                                        header: "نوع المصروف",
+                                        className: "p-4",
+                                        render: (t: any) => (
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-gray-200">{t.expenseCategoryId?.name || t.category}</span>
+                                                {t.expenseSubtype && <span className="text-[10px] text-gray-500">{t.expenseSubtype}</span>}
+                                            </div>
+                                        )
+                                    },
+                                    {
+                                        header: "الوصف",
+                                        className: "p-4 text-right flex-1",
+                                        render: (t: any) => <span className="text-sm text-gray-400">{t.description || "-"}</span>
+                                    },
+                                    {
+                                        header: "المبلغ",
+                                        className: "p-4 text-center",
+                                        render: (t: any) => (
+                                            <span className="text-orange-500 font-black">
+                                                {t.amount?.toLocaleString()} <span className="text-[10px]">د.ل</span>
+                                            </span>
+                                        ),
+                                        footer: (data) => (
+                                            <span className="text-orange-500 font-black">
+                                                {data.reduce((acc: number, t: any) => acc + (t.amount || 0), 0).toLocaleString()}
+                                            </span>
+                                        )
+                                    }
+                                ]}
+                                showTotal={true}
+                                className="border-none"
+                            />
+                        </div>
+                    </div>
+                )}
             </main>
 
             {/* Gap for bottom navigation if any */}
