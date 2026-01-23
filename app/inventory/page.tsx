@@ -96,50 +96,11 @@ export default function InventoryPage() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto pb-24 position-relative top-[75px]">
-        {/* Clickable Date Selector Section */}
-        <section className="px-4 pt-10">
-          <div>
-            <div className="relative">
-            </div>
-          </div>
-        </section>
-
-
-
+      <main className="max-w-5xl mx-auto position-relative top-[75px]">
         {/* Inventory Status Section */}
         <section className="px-4">
-          {/* <div className="flex items-center justify-between my-6">
-            <div className="flex items-center gap-4">
-              <h2 className="text-white text-xl font-bold">حالة المخزون</h2>
-            </div>
 
-            <div className="flex items-center gap-2">
-
-              <button
-                onClick={() => setModal({ open: true, type: "operationSelector", data: null })}
-                className="bg-[#1173d4] hover:bg-[#1100f4] text-white px-4 py-2 rounded-xl font-bold text-sm shadow-xl shadow-[#1173d4]/10 transition-all active:scale-95 flex items-center gap-2"
-              >
-                <FaPlus className="text-base" />
-              </button>
-
-              <button
-                onClick={openDatePicker}
-                className="bg-[#1173d4] hover:bg-[#1100f4] text-white px-4 py-2 rounded-xl font-bold text-sm shadow-xl shadow-[#1173d4]/10 transition-all active:scale-95 flex items-center gap-2"
-              >
-                <input
-                  ref={dateInputRef}
-                  className="w-full bg-[#1c2127] border border-[#3b4754] text-white rounded-2xl h-16 px-5 focus:ring-2 focus:ring-[#1173d4] focus:border-transparent outline-none transition-all cursor-pointer shadow-lg group-hover:border-[#1173d4]/50 select-none"
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                />
-              </button>
-
-            </div> 
-          </div> */}
-
-          <div className="flex sm:flex-row items-start sm:items-center justify-between my-6 gap-4">
+          <div className="flex items-center justify-between my-6 gap-4">
             <div className="flex items-center gap-4 w-full sm:w-auto">
               <h2 className="text-white text-xl font-bold">حالة المخزون</h2>
             </div>
@@ -171,42 +132,6 @@ export default function InventoryPage() {
             </div>
           </div>
 
-          {/* <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between my-6 gap-4">
-            <div className="flex items-center gap-4 w-full sm:w-auto">
-              <h2 className="text-white text-xl font-bold whitespace-nowrap">حالة المخزون</h2>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
-              <button
-                onClick={() => setModal({ open: true, type: "operationSelector", data: null })}
-                className="bg-[#1173d4] hover:bg-[#1100f4] text-white px-4 py-2 rounded-xl font-bold text-sm shadow-xl shadow-[#1173d4]/10 transition-all active:scale-95 flex items-center gap-2 flex-shrink-0"
-              >
-                <FaPlus className="text-base" />
-                <span className="hidden sm:inline">إضافة عملية</span>
-              </button>
-
-              <div className="relative group flex-grow sm:flex-grow-0 min-w-[200px]">
-                <button
-                  onClick={openDatePicker}
-                  className="w-full bg-[#1c2127] border border-[#3b4754] text-white rounded-2xl h-12 px-4 focus:ring-2 focus:ring-[#1173d4] focus:border-transparent outline-none transition-all cursor-pointer shadow-lg hover:border-[#1173d4]/50 flex items-center justify-between"
-                  type="button"
-                >
-                  <span className="text-sm font-medium">
-                    {selectedDate || "اختر التاريخ"}
-                  </span>
-                  <FaCalendarDays className="text-[#1173d4]" />
-                </button>
-                <input
-                  ref={dateInputRef}
-                  className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                />
-              </div>
-            </div>
-          </div> */}
-
           <div className="bg-[#1c2127] border border-[#3b4754] rounded-2xl overflow-hidden shadow-2xl">
             <DataTable
               data={dailyReport?.report || []}
@@ -237,6 +162,7 @@ export default function InventoryPage() {
               rowClassName={() => "border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors px-2 h-2"}
             />
           </div>
+
         </section>
 
         {/* Weekly Logs Section */}
@@ -245,7 +171,7 @@ export default function InventoryPage() {
         </section>
 
         {/* Management & Reports Section */}
-        <section className="px-4 pt-20 mb-10">
+        <section className="px-4 pt-16 mb-10">
           <div className={`relative overflow-hidden rounded-[2rem] p-10 border transition-all duration-700 ${showProtected
             ? 'bg-[#1b2127] border-[#3b4754] shadow-2xl'
             : 'bg-[#1173d4]/5 border-[#1173d4]/10'

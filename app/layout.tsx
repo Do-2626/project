@@ -21,9 +21,9 @@ export default function RootLayout({
         // className={`${inter.className} min-h-screen antialiased bg-background`}
         className={`min-h-screen antialiased bg-gradient-to-br from-gray-900 via-gray-800 to-blue-900 bg-fixed text-gray-300 font-cairo`}
       >
-        <main className="container mx-auto py-2 max-w-5xl">
+        <main className="container mx-auto max-w-5xl">
           {children}
-        </main> 
+        </main>
       </body>
     </html>
   );
