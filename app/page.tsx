@@ -63,6 +63,12 @@ export default function Home() {
               إضافة وعرض الموردين
             </p>
           </Link>
+
+          <Link href="/reports/monthly" className="bg-gradient-to-br from-amber-600 to-amber-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col items-center justify-center text-center group">
+            <BarChart3 className="h-12 w-12 text-white mb-4 group-hover:scale-110 transition-transform" />
+            <h2 className="text-xl font-bold text-white">تحليلات شهرية</h2>
+            <p className="text-amber-100 mt-2">مقارنة أداء الشهور والربحية</p>
+          </Link>
         </div>
       </div>
     </div>

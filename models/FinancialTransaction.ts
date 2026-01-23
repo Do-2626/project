@@ -1,46 +1,46 @@
 import mongoose, { Schema, models, model, Types } from 'mongoose';
 
 const FinancialTransactionSchema = new Schema({
-  type: { 
-    type: String, 
-    enum: ['expense', 'income', 'purchase'], 
-    required: true 
+  type: {
+    type: String,
+    enum: ['expense', 'income', 'purchase'],
+    required: true
   },
-  amount: { 
-    type: Number, 
-    required: true 
+  amount: {
+    type: Number,
+    required: true
   },
-  category: { 
-    type: String, 
-    required: true 
+  category: {
+    type: String,
+    required: true
   },
-  description: { 
-    type: String 
+  description: {
+    type: String
   },
-  party: { 
-    type: String 
+  party: {
+    type: String
   },
-  date: { 
-    type: String, 
-    required: true 
+  date: {
+    type: String,
+    required: true
   }, // YYYY-MM-DD
-  invoiceNumber: { 
-    type: String 
+  invoiceNumber: {
+    type: String
   },
-  productId: { 
-    type: Types.ObjectId, 
-    ref: 'Product' 
+  productId: {
+    type: Types.ObjectId,
+    ref: 'Product'
   }, // فقط للمشتريات
-  quantity: { 
-    type: Number 
+  quantity: {
+    type: Number
   }, // فقط للمشتريات
-  branchId: { 
-    type: Types.ObjectId, 
-    ref: 'Branch' 
+  branchId: {
+    type: Types.ObjectId,
+    ref: 'Branch'
   }, // مرجع للفرع
-  isRecurring: { 
-    type: Boolean, 
-    default: false 
+  isRecurring: {
+    type: Boolean,
+    default: false
   },
   expenseCategoryId: {
     type: Types.ObjectId,
@@ -49,9 +49,13 @@ const FinancialTransactionSchema = new Schema({
   expenseSubtype: {
     type: String
   },
-  createdAt: { 
-    type: Date, 
-    default: Date.now 
+  transactionId: {
+    type: Types.ObjectId,
+    ref: 'Transaction'
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
   }
 });
 

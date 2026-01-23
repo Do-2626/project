@@ -85,13 +85,13 @@ export default function DataTable<T>({
                         safeData.map((item, rowIdx) => (
                             <tr
                                 key={rowIdx}
-                                className={`transition-all duration-300 hover:bg-[#1173d4]/5 ${rowClassName ? rowClassName(item, rowIdx) : ""
+                                className={`px-2 transition-all duration-300 hover:bg-[#1173d4]/5 ${rowClassName ? rowClassName(item, rowIdx) : ""
                                     }`}
                             >
                                 {columns.map((col, colIdx) => (
                                     <td
                                         key={colIdx}
-                                        className={`transition-all duration-300 ${col.className || ""}`}
+                                        className={`px-2 transition-all duration-300 ${col.className || ""}`}
                                     >
                                         {col.render
                                             ? col.render(item, rowIdx)

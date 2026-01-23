@@ -114,9 +114,10 @@ export async function GET(req: NextRequest) {
       endQty: (a.purchase + a.incoming) - (a.outgoing + a.damaged + a.sale),
       expectedSales: (periodLoading - periodReturns),
       actualSalesAmount: actualSalesMap[productIdStr]?.totalAmount || 0,
-      actualSalesQty: actualSalesMap[productIdStr]?.totalQuantity || 0
+      actualSalesQty: actualSalesMap[productIdStr]?.totalQuantity || 0,
+      hasActivity: periodLoading !== 0 || periodReturns !== 0 || (actualSalesMap[productIdStr]?.totalQuantity || 0) !== 0
     };
-  });
+  }).filter(item => item.startQty !== 0 || item.endQty !== 0 || item.hasActivity);
 
   return NextResponse.json({
     report,

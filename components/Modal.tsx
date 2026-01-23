@@ -1,8 +1,24 @@
 import React, { useState } from "react";
+import {
+  FaArrowUp, FaArrowDown, FaCartPlus, FaWallet, FaBan, FaRightLeft, FaXmark
+} from "react-icons/fa6";
 import PasswordPrompt from "./PasswordPrompt";
 import BulkTransactionTable from "@/app/inventory/components/BulkTransactionTable";
 
-export default function Modal({ open, type, onClose, onSuccess, products, selectedDate, transactionId, onDeleteConfirm, dailyReport }: any) {
+const typeLabels: Record<string, string> = {
+  outgoing: "تسجيل عملية تحميل",
+  incoming: "تسجيل عملية مرتجع",
+  purchase: "تسجيل عملية شراء",
+  transfer: "تسجيل عملية تحويل",
+  dailyExpense: "تسجيل مصروف",
+  damaged: "تسجيل عملية تالف",
+  addProduct: "إضافة صنف جديد",
+  delete: "تأكيد الحذف",
+  operationSelector: "إضافة عملية جديدة",
+  sale: "تسجيل عملية بيع"
+};
+
+export default function Modal({ open, type, onClose, onSuccess, products, selectedDate, transactionId, onDeleteConfirm, dailyReport, onSelectType }: any) {
   const [form, setForm] = useState<any>({});
   const [showPassword, setShowPassword] = useState(false);
   const [branches, setBranches] = useState<any[]>([]);
@@ -444,6 +460,32 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
         </div>
       </div>
     );
+  } else if (type === "operationSelector") {
+    const operations = [
+      { type: 'outgoing', label: 'تحميل', icon: <FaArrowUp />, color: 'red' },
+      { type: 'incoming', label: 'مرتجع', icon: <FaArrowDown />, color: 'yellow' },
+      { type: 'purchase', label: 'شراء', icon: <FaCartPlus />, color: 'green' },
+      { type: 'transfer', label: 'تحويل', icon: <FaRightLeft />, color: 'blue' },
+      { type: 'dailyExpense', label: 'مصروف', icon: <FaWallet />, color: 'orange' },
+      { type: 'damaged', label: 'تالف', icon: <FaBan />, color: 'purple' },
+    ];
+
+    body = (
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-2">
+        {operations.map((op) => (
+          <button
+            key={op.type}
+            onClick={() => onSelectType(op.type)}
+            className={`flex flex-col gap-3 rounded-2xl border border-${op.color}-500/20 bg-${op.color}-500/10 p-6 items-center justify-center transition-all hover:border-${op.color}-500/40 hover:bg-${op.color}-500/20 active:scale-95 group shadow-sm`}
+          >
+            <div className={`text-${op.color}-500 bg-${op.color}-500/20 p-4 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner`}>
+              {op.icon}
+            </div>
+            <h2 className="text-white text-sm font-black tracking-wide">{op.label}</h2>
+          </button>
+        ))}
+      </div>
+    );
   } else {
     body = transactionFields;
   }
@@ -452,10 +494,10 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 overflow-y-auto">
       <div className={`bg-gray-800 rounded-lg shadow-xl w-[95%] ${type === 'delete' || type === 'addProduct' ? 'max-w-[500px]' : 'max-w-4xl'} p-4 mx-2 modal-content scale-95`}>
         <div className="flex justify-between items-center border-b border-gray-700 pb-3 mb-4">
-          <h3 className="text-xl font-semibold">{type === "addProduct" ? "إضافة صنف جديد" : type === "delete" ? "تأكيد الحذف" : "تسجيل عملية"}</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">&times;</button>
+          <h3 className="text-xl font-semibold">{typeLabels[type] || "تسجيل عملية"}</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-white"> <FaXmark className="text-xl" /></button>
         </div>
-        {type !== "delete" ? (
+        {type !== "delete" && type !== "operationSelector" ? (
           <form onSubmit={handleSubmit}>
             <div className="space-y-4">{body}</div>
             <div className="flex justify-end gap-4 pt-4 mt-4 border-t border-gray-700">

@@ -22,8 +22,11 @@ export default function BranchExpectedSales() {
     const [isEditing, setIsEditing] = useState(false);
     const [editValues, setEditValues] = useState<Record<string, number>>({});
     const [isLoading, setIsLoading] = useState(false);
+    const [receivedAmount, setReceivedAmount] = useState<string>("");
+    const [isSavingPayment, setIsSavingPayment] = useState(false);
 
     useEffect(() => {
+        document.title = "مبيعات الفروع - توتى بيروتى";
         fetch("/api/branches")
             .then((res) => res.json())
             .then(setBranches);
@@ -91,6 +94,39 @@ export default function BranchExpectedSales() {
             }
         } catch (error) {
             console.error("Failed to save actual sales", error);
+        }
+    };
+
+    const handleRecordPayment = async () => {
+        if (!receivedAmount || Number(receivedAmount) <= 0) return;
+        setIsSavingPayment(true);
+        try {
+            const saveDate = branchSelectedDate === "ALL_WEEK"
+                ? branchSelectedWeek.format("YYYY-MM-DD")
+                : branchSelectedDate;
+
+            const response = await fetch("/api/finance/transactions", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    type: "income",
+                    amount: Number(receivedAmount),
+                    category: "تحصيل من عهدة الفرع",
+                    description: `تحصيل مالي من عهدة الفرع (${currentBranch?.name})`,
+                    date: saveDate,
+                    branchId: selectedBranch,
+                    party: currentBranch?.name
+                }),
+            });
+
+            if (response.ok) {
+                setReceivedAmount("");
+                fetchReport();
+            }
+        } catch (error) {
+            console.error("Failed to record payment", error);
+        } finally {
+            setIsSavingPayment(false);
         }
     };
 
@@ -337,6 +373,89 @@ export default function BranchExpectedSales() {
                         className="border-none"
                     />
                 </div>
+
+                {/* Financial Summary Section */}
+                {selectedBranch && branchReport && (
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="bg-[#1b2127]/80 p-6 rounded-2xl border border-[#3b4754] shadow-xl">
+                            <span className="text-[#9cabba] text-[10px] font-black uppercase tracking-widest block mb-1">إجمالي المبيعات الفعلية</span>
+                            <span className="text-yellow-500 font-black text-2xl">
+                                {branchReport.report.reduce((acc: number, r: any) => acc + (r.actualSalesAmount || 0), 0).toLocaleString()}
+                                <span className="text-sm opacity-60 mr-1">د.ل</span>
+                            </span>
+                        </div>
+                        <div className="bg-[#1b2127]/80 p-6 rounded-2xl border border-[#3b4754] shadow-xl">
+                            <span className="text-[#9cabba] text-[10px] font-black uppercase tracking-widest block mb-1">إجمالي المصروفات</span>
+                            <span className="text-orange-500 font-black text-2xl">
+                                {branchReport.during.filter((t: any) => t.isFinancial && t.type === 'expense').reduce((acc: number, t: any) => acc + (t.amount || 0), 0).toLocaleString()}
+                                <span className="text-sm opacity-60 mr-1">د.ل</span>
+                            </span>
+                        </div>
+                        <div className="bg-[#1173d4]/10 p-6 rounded-2xl border border-[#1173d4]/30 shadow-xl relative overflow-hidden group">
+                            <div className="absolute top-0 left-0 w-1 h-full bg-[#1173d4]"></div>
+                            <span className="text-[#1173d4] text-[10px] font-black uppercase tracking-widest block mb-1">صافي مستحقات الفرع</span>
+                            <span className="text-white font-black text-2xl">
+                                {(
+                                    branchReport.report.reduce((acc: number, r: any) => acc + (r.actualSalesAmount || 0), 0) -
+                                    branchReport.during.filter((t: any) => t.isFinancial && t.type === 'expense').reduce((acc: number, t: any) => acc + (t.amount || 0), 0)
+                                ).toLocaleString()}
+                                <span className="text-sm opacity-60 mr-1">د.ل</span>
+                            </span>
+                        </div>
+                        <div className="bg-green-500/10 p-6 rounded-2xl border border-green-500/30 shadow-xl relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
+                            <span className="text-green-500 text-[10px] font-black uppercase tracking-widest block mb-1">المبالغ المسلمة (المحصلة)</span>
+                            <span className="text-white font-black text-2xl">
+                                {branchReport.during.filter((t: any) => t.isFinancial && t.type === 'income' && t.category === "تحصيل من عهدة الفرع").reduce((acc: number, t: any) => acc + (t.amount || 0), 0).toLocaleString()}
+                                <span className="text-sm opacity-60 mr-1">د.ل</span>
+                            </span>
+                        </div>
+                    </div>
+                )}
+
+                {/* Collection Form & Remaining Balance */}
+                {selectedBranch && branchReport && (
+                    <div className="bg-[#1c2127] border border-[#3b4754] rounded-2xl p-6 shadow-2xl">
+                        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                            <div className="flex-1 w-full">
+                                <label className="block mb-2 text-sm font-bold text-gray-400">تسجيل مبلغ مستلم من المندوب</label>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="number"
+                                        placeholder="أدخل المبلغ هنا..."
+                                        className="flex-1 bg-[#101922] border border-[#3b4754] text-white rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-[#1173d4] transition-all"
+                                        value={receivedAmount}
+                                        onChange={(e) => setReceivedAmount(e.target.value)}
+                                    />
+                                    <button
+                                        onClick={handleRecordPayment}
+                                        disabled={isSavingPayment || !receivedAmount}
+                                        className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white px-6 py-3 rounded-xl font-bold transition-all active:scale-95 shadow-lg shadow-green-500/20"
+                                    >
+                                        {isSavingPayment ? "جاري الحفظ..." : "تأكيد التحصيل"}
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="bg-[#101922] px-8 py-5 rounded-2xl border border-[#3b4754] text-center min-w-[200px]">
+                                <span className="text-[#9cabba] text-xs font-bold block mb-1 text-right">الرصيد المتبقي في العهدة</span>
+                                <div className="flex items-center justify-center gap-2">
+                                    <span className={`text-3xl font-black ${(
+                                        branchReport.report.reduce((acc: number, r: any) => acc + (r.actualSalesAmount || 0), 0) -
+                                        branchReport.during.filter((t: any) => t.isFinancial && t.type === 'expense').reduce((acc: number, t: any) => acc + (t.amount || 0), 0) -
+                                        branchReport.during.filter((t: any) => t.isFinancial && t.type === 'income' && t.category === "تحصيل من عهدة الفرع").reduce((acc: number, t: any) => acc + (t.amount || 0), 0)
+                                    ) > 0 ? 'text-red-500' : 'text-green-500'}`}>
+                                        {(
+                                            branchReport.report.reduce((acc: number, r: any) => acc + (r.actualSalesAmount || 0), 0) -
+                                            branchReport.during.filter((t: any) => t.isFinancial && t.type === 'expense').reduce((acc: number, t: any) => acc + (t.amount || 0), 0) -
+                                            branchReport.during.filter((t: any) => t.isFinancial && t.type === 'income' && t.category === "تحصيل من عهدة الفرع").reduce((acc: number, t: any) => acc + (t.amount || 0), 0)
+                                        ).toLocaleString()}
+                                    </span>
+                                    <span className="text-sm opacity-60">د.ل</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Expenses Section */}
                 {selectedBranch && (

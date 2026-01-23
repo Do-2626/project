@@ -20,15 +20,16 @@ export default function InventoryPage() {
   const dateInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    document.title = "المخزون - توتى بيروتى";
     // Add Material Symbols font if not present
     const link = document.createElement('link');
-    link.href = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap';
+    // link.href = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap';
     link.rel = 'stylesheet';
     document.head.appendChild(link);
   }, []);
 
   const [products, setProducts] = useState<Product[]>([]);
-  const [transactions, setTransactions] = useState([]);
+  // const [transactions, setTransactions] = useState([]);
   const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
   const [modal, setModal] = useState({ open: false, type: "", data: null });
   const [dailyReport, setDailyReport] = useState<any>(null);
@@ -54,7 +55,7 @@ export default function InventoryPage() {
 
   const handleUpdateProduct = async (updatedProduct: Product) => {
     try {
-      const response = await fetch(`/api/inventory/products?id=${updatedProduct._id}`, {
+      const response = await fetch(`/api/inventory/products/${updatedProduct._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedProduct),
@@ -82,97 +83,129 @@ export default function InventoryPage() {
       {/* Header / TopAppBar */}
       <header className="z-50 flex items-center bg-[#101922]/80 backdrop-blur-md p-4 border-b border-white/10 justify-between">
         <div className="text-white flex size-10 shrink-0 items-center justify-center bg-white/5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer">
-          <FaBars />
+          <Link href="/" >
+            <FaBars />
+          </Link>
+
         </div>
         <div className="flex-1 text-center">
-          <h1 className="text-white text-lg font-bold leading-tight tracking-tight">نظام إدارة توتى بيروتى</h1>
-          <p className="text-[#1173d4] text-[10px] md:text-xs font-medium">لوحة التحكم الرئيسية</p>
+          <h1 className="text-white text-lg font-bold leading-tight tracking-tight">توتى بيروتى</h1>
         </div>
         <div className="text-white flex size-10 shrink-0 items-center justify-center bg-white/5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer">
           <FaBell />
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto pb-24">
+      <main className="max-w-5xl mx-auto pb-24 position-relative top-[75px]">
         {/* Clickable Date Selector Section */}
         <section className="px-4 pt-10">
-          <div
-            onClick={openDatePicker}
-            className="flex flex-col gap-2 max-w-sm cursor-pointer group appearance-none [-webkit-appearance:none] [-moz-appearance:none]"
-          >
-            <label className="text-[#9cabba] text-sm font-bold pr-1 flex items-center gap-2 group-hover:text-[#1173d4] transition-colors">
-              <FaCalendarDays className="text-[#1173d4] text-xs" />
-              اليوم المختار للمتابعة
-            </label>
+          <div>
             <div className="relative">
-              <input
-                ref={dateInputRef}
-                className="w-full bg-[#1c2127] border border-[#3b4754] text-white rounded-2xl h-16 px-5 focus:ring-2 focus:ring-[#1173d4] focus:border-transparent outline-none transition-all cursor-pointer shadow-lg group-hover:border-[#1173d4]/50 select-none"
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-              />
-              <div className="absolute left-5 top-1/2 -translate-y-1/2 text-[#1173d4] pointer-events-none opacity-50 group-hover:opacity-100 transition-opacity">
-                <FaPlus className="text-sm" />
-              </div>
             </div>
           </div>
         </section>
 
-        {/* Action Buttons Section */}
-        <section className="px-4 pt-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-white text-xl font-bold">العمليات اليومية</h2>
-            <Link
-              href="/inventory/expected-sales"
-              className="text-[#1173d4] text-xs bg-[#1173d4]/10 px-4 py-2 rounded-xl hover:bg-[#1173d4] hover:text-white transition-all font-bold border border-[#1173d4]/20"
-            >
-              تسجيل مبيعات الفروع
-            </Link>
-          </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-            {[
-              { type: 'outgoing', label: 'تحميل', icon: <FaArrowUp />, color: 'red' },
-              { type: 'incoming', label: 'مرتجع', icon: <FaArrowDown />, color: 'yellow' },
-              { type: 'purchase', label: 'شراء', icon: <FaCartPlus />, color: 'green' },
-              { type: 'transfer', label: 'تحويل', icon: <FaRightLeft />, color: 'blue' },
-              { type: 'dailyExpense', label: 'مصروف', icon: <FaWallet />, color: 'orange' },
-              { type: 'damaged', label: 'تالف', icon: <FaBan />, color: 'purple' },
-            ].map((btn) => (
-              <button
-                key={btn.type}
-                onClick={() => setModal({ open: true, type: btn.type, data: null })}
-                className={`flex flex-col gap-3 rounded-2xl border border-${btn.color}-500/20 bg-${btn.color}-500/10 p-6 items-center justify-center transition-all hover:border-${btn.color}-500/40 hover:bg-${btn.color}-500/20 active:scale-95 group shadow-sm`}
-              >
-                <div className={`text-${btn.color}-500 bg-${btn.color}-500/20 p-4 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner`}>
-                  {btn.icon}
-                </div>
-                <h2 className="text-white text-sm font-black tracking-wide">{btn.label}</h2>
-              </button>
-            ))}
-          </div>
-        </section>
 
         {/* Inventory Status Section */}
-        <section className="px-4 pt-14">
-          <div className="flex items-center justify-between pb-6">
+        <section className="px-4">
+          {/* <div className="flex items-center justify-between my-6">
             <div className="flex items-center gap-4">
               <h2 className="text-white text-xl font-bold">حالة المخزون</h2>
-              <div className="flex items-center gap-1.5 bg-[#1173d4]/10 px-2.5 py-1 rounded-full border border-[#1173d4]/20">
-                <div className="size-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
-                <span className="text-[#1173d4] text-[10px] font-bold">مباشر الآن</span>
-              </div>
             </div>
 
-            <button
-              onClick={() => setModal({ open: true, type: "addProduct", data: null })}
-              className="bg-[#1173d4] hover:bg-[#1100f4] text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-xl shadow-[#1173d4]/10 transition-all active:scale-95 flex items-center gap-2"
-            >
-              <FaCircle className="text-base" />
-              إضافة صنف جديد
-            </button>
+            <div className="flex items-center gap-2">
+
+              <button
+                onClick={() => setModal({ open: true, type: "operationSelector", data: null })}
+                className="bg-[#1173d4] hover:bg-[#1100f4] text-white px-4 py-2 rounded-xl font-bold text-sm shadow-xl shadow-[#1173d4]/10 transition-all active:scale-95 flex items-center gap-2"
+              >
+                <FaPlus className="text-base" />
+              </button>
+
+              <button
+                onClick={openDatePicker}
+                className="bg-[#1173d4] hover:bg-[#1100f4] text-white px-4 py-2 rounded-xl font-bold text-sm shadow-xl shadow-[#1173d4]/10 transition-all active:scale-95 flex items-center gap-2"
+              >
+                <input
+                  ref={dateInputRef}
+                  className="w-full bg-[#1c2127] border border-[#3b4754] text-white rounded-2xl h-16 px-5 focus:ring-2 focus:ring-[#1173d4] focus:border-transparent outline-none transition-all cursor-pointer shadow-lg group-hover:border-[#1173d4]/50 select-none"
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                />
+              </button>
+
+            </div> 
+          </div> */}
+
+          <div className="flex sm:flex-row items-start sm:items-center justify-between my-6 gap-4">
+            <div className="flex items-center gap-4 w-full sm:w-auto">
+              <h2 className="text-white text-xl font-bold">حالة المخزون</h2>
+            </div>
+
+            <div className="flex items-center gap-2 justify-end">
+              <button
+                onClick={() => setModal({ open: true, type: "operationSelector", data: null })}
+                className="bg-[#1173d4] hover:bg-[#1100f4] text-white px-4 py-2 rounded-xl font-bold text-sm shadow-xl shadow-[#1173d4]/10 transition-all active:scale-95 flex items-center gap-2 flex-shrink-0"
+              >
+                <FaPlus className="text-base" />
+              </button>
+
+              <div className="relative flex-grow sm:flex-grow-0">
+                <button
+                  onClick={openDatePicker}
+                  className="bg-[#1173d4] hover:bg-[#1100f4] text-white px-4 py-2 rounded-xl font-bold text-sm shadow-xl shadow-[#1173d4]/10 transition-all active:scale-95 flex items-center justify-center gap-2"
+                  type="button"
+                >
+                  <FaCalendarDays className="text-base" />
+                  <input
+                    ref={dateInputRef}
+                    className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                  />
+                </button>
+              </div>
+            </div>
           </div>
+
+          {/* <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between my-6 gap-4">
+            <div className="flex items-center gap-4 w-full sm:w-auto">
+              <h2 className="text-white text-xl font-bold whitespace-nowrap">حالة المخزون</h2>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
+              <button
+                onClick={() => setModal({ open: true, type: "operationSelector", data: null })}
+                className="bg-[#1173d4] hover:bg-[#1100f4] text-white px-4 py-2 rounded-xl font-bold text-sm shadow-xl shadow-[#1173d4]/10 transition-all active:scale-95 flex items-center gap-2 flex-shrink-0"
+              >
+                <FaPlus className="text-base" />
+                <span className="hidden sm:inline">إضافة عملية</span>
+              </button>
+
+              <div className="relative group flex-grow sm:flex-grow-0 min-w-[200px]">
+                <button
+                  onClick={openDatePicker}
+                  className="w-full bg-[#1c2127] border border-[#3b4754] text-white rounded-2xl h-12 px-4 focus:ring-2 focus:ring-[#1173d4] focus:border-transparent outline-none transition-all cursor-pointer shadow-lg hover:border-[#1173d4]/50 flex items-center justify-between"
+                  type="button"
+                >
+                  <span className="text-sm font-medium">
+                    {selectedDate || "اختر التاريخ"}
+                  </span>
+                  <FaCalendarDays className="text-[#1173d4]" />
+                </button>
+                <input
+                  ref={dateInputRef}
+                  className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                />
+              </div>
+            </div>
+          </div> */}
 
           <div className="bg-[#1c2127] border border-[#3b4754] rounded-2xl overflow-hidden shadow-2xl">
             <DataTable
@@ -183,7 +216,7 @@ export default function InventoryPage() {
                 {
                   header: "الصنف",
                   className: "text-right",
-                  render: (r: any) => <span className="text-sm md:text-base font-bold text-gray-200">{r.product.name}</span>
+                  render: (r: any) => <span className="text-center text-sm md:text-base font-bold text-gray-200">{r.product.name}</span>
                 },
                 {
                   header: "بداية اليوم",
@@ -194,14 +227,14 @@ export default function InventoryPage() {
                   header: "نهاية اليوم",
                   className: "text-center w-32",
                   render: (r: any) => (
-                    <div className="bg-[#101922] py-2 px-4 rounded-xl border border-[#3b4754]/50 inline-block min-w-[60px] font-black text-[#1173d4] text-lg shadow-inner">
+                    <div className="bg-[#101922] py-1 px-4 rounded-xl border border-[#3b4754]/50 inline-block min-w-[60px] font-black text-[#1173d4] text-lg shadow-inner">
                       {r.endQty}
                     </div>
                   )
                 }
               ]}
               className="border-none"
-              rowClassName={() => "border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors"}
+              rowClassName={() => "border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors px-2 h-2"}
             />
           </div>
         </section>
@@ -284,6 +317,7 @@ export default function InventoryPage() {
         open={modal.open}
         type={modal.type}
         onClose={() => setModal({ open: false, type: "", data: null })}
+        onSelectType={(type: string) => setModal({ ...modal, type })}
         onSuccess={() => {
           setModal({ open: false, type: "", data: null });
           fetch("/api/inventory").then(res => res.json()).then(setProducts);

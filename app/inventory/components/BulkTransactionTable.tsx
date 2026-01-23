@@ -47,10 +47,10 @@ export default function BulkTransactionTable({
         <thead className="text-xs uppercase bg-gray-700 text-gray-300 sticky top-0 z-10">
           <tr>
             <th className="px-4 py-3">الصنف</th>
-            <th className="px-4 py-3 text-center">المخزون الحالي</th>
+            {type !== "transfer" && <th className="px-4 py-3 text-center">المخزون الحالي</th>}
             <th className="px-4 py-3 text-center">الكمية</th>
             {type === "sale" && <th className="px-4 py-3 text-center">المبلغ</th>}
-            <th className="px-4 py-3 text-center">المتوقع</th>
+            {type !== "transfer" && <th className="px-4 py-3 text-center">المتوقع</th>}
           </tr>
         </thead>
         <tbody>
@@ -69,14 +69,13 @@ export default function BulkTransactionTable({
             return (
               <tr
                 key={product._id}
-                className={`border-b border-gray-700 hover:bg-gray-700 transition-colors ${
-                  isModified ? "bg-gray-800 bg-opacity-60" : "bg-gray-800"
-                }`}
+                className={`border-b border-gray-700 hover:bg-gray-700 transition-colors ${isModified ? "bg-gray-800 bg-opacity-60" : "bg-gray-800"
+                  }`}
               >
                 <td className="px-4 py-2 font-medium text-white">
                   {product.name}
                 </td>
-                <td className="px-4 py-2 text-center">{currentStock}</td>
+                {type !== "transfer" && <td className="px-4 py-2 text-center">{currentStock}</td>}
                 <td className="px-4 py-2 text-center">
                   <input
                     type="number"
@@ -88,9 +87,8 @@ export default function BulkTransactionTable({
                         parseInt(e.target.value) || 0
                       )
                     }
-                    className={`w-20 text-center rounded p-1 text-white bg-gray-700 border ${
-                      isModified ? "border-blue-500 ring-1 ring-blue-500" : "border-gray-600"
-                    } focus:outline-none focus:border-blue-500`}
+                    className={`w-20 text-center rounded p-1 text-white bg-gray-700 border ${isModified ? "border-blue-500 ring-1 ring-blue-500" : "border-gray-600"
+                      } focus:outline-none focus:border-blue-500`}
                     placeholder="0"
                   />
                 </td>
@@ -107,20 +105,20 @@ export default function BulkTransactionTable({
                           parseFloat(e.target.value) || 0
                         )
                       }
-                      className={`w-24 text-center rounded p-1 text-white bg-gray-700 border ${
-                        isModified && amount > 0 ? "border-green-500 ring-1 ring-green-500" : "border-gray-600"
-                      } focus:outline-none focus:border-green-500`}
+                      className={`w-24 text-center rounded p-1 text-white bg-gray-700 border ${isModified && amount > 0 ? "border-green-500 ring-1 ring-green-500" : "border-gray-600"
+                        } focus:outline-none focus:border-green-500`}
                       placeholder="0.00"
                     />
                   </td>
                 )}
-                <td
-                  className={`px-4 py-2 text-center font-bold ${
-                    isNegative ? "text-red-500" : "text-green-400"
-                  }`}
-                >
-                  {expected}
-                </td>
+                {type !== "transfer" && (
+                  <td
+                    className={`px-4 py-2 text-center font-bold ${isNegative ? "text-red-500" : "text-green-400"
+                      }`}
+                  >
+                    {expected}
+                  </td>
+                )}
               </tr>
             );
           })}

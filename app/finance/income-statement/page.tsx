@@ -43,6 +43,7 @@ export default function IncomeStatement() {
 
     setStartDate(firstDay.toISOString().split('T')[0]);
     setEndDate(lastDay.toISOString().split('T')[0]);
+    document.title = "قائمة الدخل - توتى بيروتى";
   }, []);
 
   const fetchIncomeStatement = async () => {

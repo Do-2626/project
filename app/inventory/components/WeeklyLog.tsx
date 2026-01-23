@@ -36,6 +36,7 @@ export default function WeeklyLog({ iconMap }: WeeklyLogProps) {
   const [typeFilter, setTypeFilter] = useState("");
   const [partyFilter, setPartyFilter] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [selectedTxId, setSelectedTxId] = useState<string | null>(null);
 
   const weeks = Array.from({ length: 12 }).map((_, i) => {
@@ -126,71 +127,33 @@ export default function WeeklyLog({ iconMap }: WeeklyLogProps) {
             </div>
           </div>
 
-          {isOpen && (
-            <div className="flex flex-wrap items-center gap-4 xl:justify-end flex-1">
-              {/* Filter Group */}
-              <div className="flex flex-wrap items-center gap-3 bg-[#101922]/50 p-1.5 rounded-2xl border border-[#3b4754]/50">
-                <div className="flex flex-col h-11 justify-center px-4 bg-[#101922] rounded-xl border border-[#3b4754]/50 min-w-[180px]">
-                  <span className="text-[9px] text-[#1173d4] font-black uppercase tracking-tighter mb-0.5">نطاق الأسبوع</span>
-                  <select
-                    className="bg-transparent border-none text-white text-[11px] font-bold focus:ring-0 outline-none w-full p-0 cursor-pointer"
-                    value={selectedWeek.format("YYYY-MM-DD")}
-                    onChange={(e) => setSelectedWeek(dayjs(e.target.value))}
-                  >
-                    {weeks.map((w, i) => (
-                      <option key={i} value={w.start.format("YYYY-MM-DD")} className="bg-[#1b2127]">
-                        {w.start.format("D MMM")} - {w.end.format("D MMM YYYY")}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+          {isOpen && showProtected && (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsFilterModalOpen(true)}
+                className="size-11 flex items-center justify-center bg-[#1173d4] text-white rounded-xl shadow-lg hover:bg-[#1100f4] transition-all active:scale-95 group"
+                title="تصفية النتائج"
+              >
+                <FaFilter className="text-lg group-hover:rotate-12 transition-transform" />
+              </button>
 
-                <div className="flex items-center gap-2 bg-[#101922] rounded-xl border border-[#3b4754]/50 px-3 h-11">
-                  <span className="text-[9px] text-[#9cabba] font-black uppercase whitespace-nowrap">النوع:</span>
-                  <select
-                    value={typeFilter}
-                    onChange={(e) => setTypeFilter(e.target.value)}
-                    className="bg-transparent border-none text-white text-[11px] font-bold focus:ring-0 outline-none cursor-pointer"
-                  >
-                    <option value="" className="bg-[#1b2127]">الكل</option>
-                    {Object.entries(typeLabels).map(([val, label]) => (
-                      <option key={val} value={val} className="bg-[#1b2127]">{label}</option>
-                    ))}
-                  </select>
-                </div>
+              <div className="hidden md:block h-8 w-[1px] bg-white/10 mx-2"></div>
 
-                <div className="flex items-center gap-2 bg-[#101922] rounded-xl border border-[#3b4754]/50 px-3 h-11">
-                  <span className="text-[9px] text-[#9cabba] font-black uppercase whitespace-nowrap">الجهة:</span>
-                  <select
-                    value={partyFilter}
-                    onChange={(e) => setPartyFilter(e.target.value)}
-                    className="bg-transparent border-none text-white text-[11px] font-bold focus:ring-0 outline-none cursor-pointer"
-                  >
-                    <option value="" className="bg-[#1b2127]">الكل</option>
-                    {uniqueParties.map((p: any) => (
-                      <option key={p} value={p} className="bg-[#1b2127]">{p}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+              <ExportButtonCSV
+                data={filteredTransactions}
+                fileName={`log-${selectedWeek.format("YYYY-MM-DD")}`}
+                label="تصدير السجل"
+              />
 
-              {/* Action Group */}
-              <div className="flex items-center gap-2">
-                <ExportButtonCSV
-                  data={filteredTransactions}
-                  fileName={`log-${selectedWeek.format("YYYY-MM-DD")}`}
-                  label="تصدير السجل"
-                />
-                {(typeFilter || partyFilter) && (
-                  <button
-                    onClick={() => { setTypeFilter(""); setPartyFilter(""); }}
-                    className="size-11 flex items-center justify-center bg-red-400/5 text-red-400 border border-red-400/20 hover:bg-red-400 hover:text-white rounded-xl transition-all shadow-sm"
-                    title="إعادة تعيين الفلاتر"
-                  >
-                    <FaFilter className="text-xs" />
-                  </button>
-                )}
-              </div>
+              {(typeFilter || partyFilter) && (
+                <button
+                  onClick={() => { setTypeFilter(""); setPartyFilter(""); }}
+                  className="px-4 h-11 flex items-center justify-center bg-red-400/10 text-red-100 border border-red-400/20 hover:bg-red-400 hover:text-white rounded-xl transition-all shadow-sm text-xs font-bold gap-2"
+                >
+                  <FaFilter className="text-[10px]" />
+                  إعادة تعيين
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -377,6 +340,70 @@ export default function WeeklyLog({ iconMap }: WeeklyLogProps) {
         transactionId={selectedTxId}
         onDeleteConfirm={handleDeleteConfirm}
       />
-    </div >
+
+      {/* Filters Modal */}
+      {isFilterModalOpen && (
+        <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4 backdrop-blur-md">
+          <div className="bg-[#1b2127] border border-[#3b4754] p-8 rounded-[2.5rem] w-full max-w-md shadow-2xl scale-100 transition-all">
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-2xl font-black text-white">تصفية السجل</h3>
+              <button onClick={() => setIsFilterModalOpen(false)} className="size-10 flex items-center justify-center bg-white/5 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors">✕</button>
+            </div>
+
+            <div className="space-y-6">
+              <div className="flex flex-col gap-2">
+                <label className="text-[#1173d4] text-[10px] font-black uppercase tracking-widest px-1">نطاق الأسبوع</label>
+                <select
+                  className="w-full bg-[#101922] border border-[#3b4754] text-white rounded-2xl h-14 px-5 focus:ring-2 focus:ring-[#1173d4] outline-none transition-all cursor-pointer font-bold"
+                  value={selectedWeek.format("YYYY-MM-DD")}
+                  onChange={(e) => setSelectedWeek(dayjs(e.target.value))}
+                >
+                  {weeks.map((w, i) => (
+                    <option key={i} value={w.start.format("YYYY-MM-DD")} className="bg-[#1b2127]">
+                      {w.start.format("D MMM")} - {w.end.format("D MMM YYYY")}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-[#9cabba] text-[10px] font-black uppercase tracking-widest px-1">نوع العملية</label>
+                <select
+                  value={typeFilter}
+                  onChange={(e) => setTypeFilter(e.target.value)}
+                  className="w-full bg-[#101922] border border-[#3b4754] text-white rounded-2xl h-14 px-5 focus:ring-2 focus:ring-[#1173d4] outline-none transition-all cursor-pointer font-bold"
+                >
+                  <option value="" className="bg-[#1b2127]">جميع الأنواع</option>
+                  {Object.entries(typeLabels).map(([val, label]) => (
+                    <option key={val} value={val} className="bg-[#1b2127]">{label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-[#9cabba] text-[10px] font-black uppercase tracking-widest px-1">الجهة / الفرع</label>
+                <select
+                  value={partyFilter}
+                  onChange={(e) => setPartyFilter(e.target.value)}
+                  className="w-full bg-[#101922] border border-[#3b4754] text-white rounded-2xl h-14 px-5 focus:ring-2 focus:ring-[#1173d4] outline-none transition-all cursor-pointer font-bold"
+                >
+                  <option value="" className="bg-[#1b2127]">جميع الجهات</option>
+                  {uniqueParties.map((p: any) => (
+                    <option key={p} value={p} className="bg-[#1b2127]">{p}</option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                onClick={() => setIsFilterModalOpen(false)}
+                className="w-full bg-[#1173d4] hover:bg-[#1100f4] text-white font-black py-4 rounded-2xl transition-all shadow-lg active:scale-95 mt-4"
+              >
+                تحديث النتائج
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

@@ -44,7 +44,7 @@ export default function SuppliersPage() {
         e.preventDefault();
         try {
             const url = editingSupplier
-                ? `/api/contacts?id=${editingSupplier._id}`
+                ? `/api/contacts/${editingSupplier._id}`
                 : "/api/contacts";
             const method = editingSupplier ? "PUT" : "POST";
 
@@ -71,7 +71,7 @@ export default function SuppliersPage() {
     const handleDelete = async (id: string) => {
         if (!confirm("هل أنت متأكد من حذف هذا المورد؟")) return;
         try {
-            const res = await fetch(`/api/contacts?id=${id}`, {
+            const res = await fetch(`/api/contacts/${id}`, {
                 method: "DELETE",
             });
             if (res.ok) {

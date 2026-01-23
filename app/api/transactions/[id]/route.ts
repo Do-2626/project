@@ -1,62 +1,92 @@
-import { dbConnect } from '@/lib/mongoose';
+import { NextRequest, NextResponse } from 'next/server';
 import Transaction from '@/models/Transaction';
-import { NextResponse } from 'next/server';
+import FinancialTransaction from '@/models/FinancialTransaction';
+import { dbConnect } from '@/lib/mongoose';
+import mongoose from 'mongoose';
 
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  await dbConnect();
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    await dbConnect();
-    
-    // Validate transaction ID format
-    if (!/^[0-9a-fA-F]{24}$/.test(params.id)) {
-      return NextResponse.json({ error: 'معرّف غير صالح' }, { status: 400 });
-    }
+    const id = params.id;
+    const body = await request.json();
 
-    const data = await request.json();
-    
-    console.log(`Updating transaction ID: ${params.id}`);
-    const updatedTransaction = await Transaction.findByIdAndUpdate(
-      params.id,
-      data,
-      { new: true }
-    );
-
+    const updatedTransaction = await Transaction.findByIdAndUpdate(id, body, { new: true, session });
     if (!updatedTransaction) {
-      console.error(`Transaction not found: ${params.id}`);
+      await session.abortTransaction();
+      session.endSession();
       return NextResponse.json({ error: 'المعاملة غير موجودة' }, { status: 404 });
     }
 
-    console.log('Transaction updated successfully:', updatedTransaction);
+    // تحديث القيد المالي المرتبط إذا وجد
+    if (updatedTransaction.type === 'purchase' || updatedTransaction.type === 'sale') {
+      await FinancialTransaction.findOneAndUpdate(
+        { transactionId: id },
+        {
+          amount: updatedTransaction.amount,
+          date: updatedTransaction.date,
+          party: updatedTransaction.party,
+          quantity: updatedTransaction.quantity,
+          productId: updatedTransaction.productId,
+          branchId: updatedTransaction.branchId,
+        },
+        { session }
+      );
+    }
 
+    await session.commitTransaction();
+    session.endSession();
     return NextResponse.json(updatedTransaction);
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to update transaction' },
-      { status: 500 }
-    );
+  } catch (error: any) {
+    await session.abortTransaction();
+    session.endSession();
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
 export async function DELETE(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  await dbConnect();
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    await dbConnect();
-    
-    const deletedTransaction = await Transaction.findByIdAndDelete(params.id);
+    const id = params.id;
+    const deletedTransaction = await Transaction.findByIdAndDelete(id).session(session);
 
     if (!deletedTransaction) {
+      await session.abortTransaction();
+      session.endSession();
       return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
     }
 
+    // حذف القيد المالي المرتبط
+    const deleteResult = await FinancialTransaction.deleteOne({ transactionId: id }).session(session);
+
+    // دعم البيانات القديمة
+    if (deleteResult.deletedCount === 0 && (deletedTransaction.type === 'purchase' || deletedTransaction.type === 'sale')) {
+      await FinancialTransaction.deleteOne({
+        productId: deletedTransaction.productId,
+        quantity: deletedTransaction.quantity,
+        date: deletedTransaction.date,
+        type: deletedTransaction.type === 'purchase' ? 'purchase' : 'income',
+        transactionId: { $exists: false }
+      }).session(session);
+    }
+
+    await session.commitTransaction();
+    session.endSession();
     return NextResponse.json({ message: 'Transaction deleted successfully' });
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to delete transaction' },
-      { status: 500 }
-    );
+  } catch (error: any) {
+    await session.abortTransaction();
+    session.endSession();
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
