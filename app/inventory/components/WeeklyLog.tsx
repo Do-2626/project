@@ -167,7 +167,7 @@ export default function WeeklyLog({ iconMap }: WeeklyLogProps) {
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
                   <span className="text-[#1173d4] font-bold text-xs bg-[#1173d4]/10 px-3 py-1 rounded-full border border-[#1173d4]/20">
-                    عمليات اليوم ({dayjs().format("D MMMM")})
+                    عمليات اليوم ({dayjs().format("M/D")})
                   </span>
                   <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-[#3b4754]"></div>
                 </div>
