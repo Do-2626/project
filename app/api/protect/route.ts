@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import Product from "@/models/Product";
 
 // كلمات المرور محفوظة فقط في الخادم
-const MANAGER_PASSWORD = "admin2626";
+const MANAGER_PASSWORD = "mo2626";
 const DELEGATE_PASSWORD = "user2626";
 
 export async function POST(req: Request) {

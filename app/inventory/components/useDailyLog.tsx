@@ -56,7 +56,7 @@ export const useDailyLog = (initialTransactions: Transaction[]) => {
       alert("يجب إدخال كلمة مرور");
       return;
     }
-    if (password !== "admin123") {
+    if (password !== "mo123") {
       alert("كلمة المرور غير صحيحة");
       return;
     }
