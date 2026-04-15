@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import Product from "@/models/Product";
 
 // كلمات المرور محفوظة فقط في الخادم
 const MANAGER_PASSWORD = "mo2626";

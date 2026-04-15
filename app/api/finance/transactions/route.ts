@@ -1,149 +1,185 @@
 import { NextRequest, NextResponse } from 'next/server';
-import FinancialTransaction from '@/models/FinancialTransaction';
-import Product from '@/models/Product';
-import Branch from '@/models/Branch';
-import Transaction from '@/models/Transaction';
-import { dbConnect } from '@/lib/mongoose';
+import { supabase, pickSnake, toCamel } from '@/lib/supabase';
 
 export async function GET(req: NextRequest) {
-  await dbConnect();
-  const { searchParams } = new URL(req.url!);
+  const { searchParams } = new URL(req.url);
   const date = searchParams.get('date');
   const category = searchParams.get('category');
   const type = searchParams.get('type');
   const startDate = searchParams.get('startDate');
   const endDate = searchParams.get('endDate');
-  
-  let filter: any = {};
-  
-  // تطبيق الفلاتر إذا تم تحديدها
-  if (date) filter.date = date;
-  if (category) filter.category = category;
-  if (type) filter.type = type;
-  
-  // فلتر نطاق التاريخ
-  if (startDate && endDate) {
-    filter.date = { $gte: startDate, $lte: endDate };
+
+  let query = supabase
+    .from('financial_transactions')
+    .select('*, product_id(*), branch_id(*)')
+    .order('date', { ascending: true });
+
+  if (date) query = query.eq('date', date);
+  if (category) query = query.eq('category', category);
+  if (type) query = query.eq('type', type);
+  if (startDate && endDate) query = query.gte('date', startDate).lte('date', endDate);
+
+  const { data, error } = await query;
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  
-  const transactions = await FinancialTransaction.find(filter).populate('productId');
-  return NextResponse.json(transactions);
+
+  return NextResponse.json((data ?? []).map(toCamel));
 }
 
 export async function POST(req: NextRequest) {
-  await dbConnect();
   const body = await req.json();
-  
+
   try {
-    // إذا كانت المعاملة من نوع شراء، تحقق من وجود المنتج
     if (body.type === 'purchase') {
       if (!body.productId) {
-        return NextResponse.json(
-          { message: 'يجب تحديد المنتج لعمليات الشراء' },
-          { status: 400 }
-        );
+        return NextResponse.json({ message: 'يجب تحديد المنتج لعمليات الشراء' }, { status: 400 });
       }
-      
       if (!body.quantity || body.quantity <= 0) {
-        return NextResponse.json(
-          { message: 'يجب تحديد كمية صالحة للشراء' },
-          { status: 400 }
-        );
+        return NextResponse.json({ message: 'يجب تحديد كمية صالحة للشراء' }, { status: 400 });
       }
-      
-      // التحقق من وجود المنتج
-      const product = await Product.findById(body.productId);
+
+      const { data: product, error: productError } = await supabase
+        .from('products')
+        .select('id')
+        .eq('id', body.productId)
+        .single();
+
+      if (productError) {
+        if (productError.code === 'PGRST116') {
+          return NextResponse.json({ message: 'المنتج غير موجود' }, { status: 404 });
+        }
+        return NextResponse.json({ message: productError.message }, { status: 500 });
+      }
+
       if (!product) {
-        return NextResponse.json(
-          { message: 'المنتج غير موجود' },
-          { status: 404 }
-        );
+        return NextResponse.json({ message: 'المنتج غير موجود' }, { status: 404 });
       }
-      
-      // إنشاء معاملة مالية للشراء
-      const financialTransaction = await FinancialTransaction.create(body);
-      
-      // إنشاء معاملة مخزون للشراء لتحديث المخزون
-      await Transaction.create({
-        productId: body.productId,
+
+      const financialPayload = pickSnake(body, [
+        'type',
+        'amount',
+        'category',
+        'description',
+        'party',
+        'date',
+        'invoiceNumber',
+        'productId',
+        'quantity',
+        'branchId',
+        'expenseCategoryId',
+        'expenseSubtype',
+        'transactionId',
+        'isRecurring',
+      ]);
+
+      const { data: financialTransaction, error: financialError } = await supabase
+        .from('financial_transactions')
+        .insert(financialPayload)
+        .select()
+        .single();
+
+      if (financialError) {
+        return NextResponse.json({ message: financialError.message }, { status: 500 });
+      }
+
+      const inventoryPayload = {
+        product_id: body.productId,
         quantity: body.quantity,
         type: 'purchase',
         party: body.party,
         date: body.date,
         amount: body.amount,
         category: body.category,
-        isRecurring: body.isRecurring || false
-      });
-      
-      return NextResponse.json(financialTransaction, { status: 201 });
-    } else {
-      // للمعاملات المالية الأخرى (مصروفات، إيرادات)
-      const transaction = await FinancialTransaction.create(body);
-      return NextResponse.json(transaction, { status: 201 });
+        branch_id: body.branchId,
+        is_recurring: body.isRecurring || false,
+      };
+
+      const { error: inventoryError } = await supabase.from('transactions').insert(inventoryPayload);
+      if (inventoryError) {
+        return NextResponse.json({ message: inventoryError.message }, { status: 500 });
+      }
+
+      return NextResponse.json(toCamel(financialTransaction), { status: 201 });
     }
+
+    const payload = pickSnake(body, [
+      'type',
+      'amount',
+      'category',
+      'description',
+      'party',
+      'date',
+      'invoiceNumber',
+      'productId',
+      'quantity',
+      'branchId',
+      'expenseCategoryId',
+      'expenseSubtype',
+      'transactionId',
+      'isRecurring',
+    ]);
+
+    const { data: transaction, error } = await supabase
+      .from('financial_transactions')
+      .insert(payload)
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ message: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(toCamel(transaction), { status: 201 });
   } catch (error) {
     console.error('خطأ في إنشاء المعاملة المالية:', error);
-    
     let errorMessage = 'حدث خطأ أثناء معالجة الطلب';
     if (error instanceof Error) {
       errorMessage = `${errorMessage}: ${error.message}`;
     }
-    
-    return NextResponse.json(
-      { message: errorMessage },
-      { status: 500 }
-    );
+
+    return NextResponse.json({ message: errorMessage }, { status: 500 });
   }
 }
 
 export async function DELETE(req: NextRequest) {
-  await dbConnect();
-  const { searchParams } = new URL(req.url!);
+  const { searchParams } = new URL(req.url);
   const id = searchParams.get('id');
-  
+
   if (!id) {
-    return NextResponse.json(
-      { message: 'يجب تحديد معرف المعاملة' },
-      { status: 400 }
-    );
+    return NextResponse.json({ message: 'يجب تحديد معرف المعاملة' }, { status: 400 });
   }
-  
-  try {
-    // التحقق من وجود المعاملة
-    const transaction = await FinancialTransaction.findById(id);
-    if (!transaction) {
-      return NextResponse.json(
-        { message: 'المعاملة غير موجودة' },
-        { status: 404 }
-      );
+
+  const { data: transaction, error: transactionError } = await supabase
+    .from('financial_transactions')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (transactionError) {
+    if (transactionError.code === 'PGRST116') {
+      return NextResponse.json({ message: 'المعاملة غير موجودة' }, { status: 404 });
     }
-    
-    // إذا كانت المعاملة من نوع شراء، يجب أيضًا حذف معاملة المخزون المرتبطة
-    if (transaction.type === 'purchase') {
-      // البحث عن معاملة المخزون المرتبطة بنفس التاريخ والمنتج والكمية
-      await Transaction.deleteOne({
-        productId: transaction.productId,
-        date: transaction.date,
-        type: 'purchase',
-        quantity: transaction.quantity
-      });
-    }
-    
-    // حذف المعاملة المالية
-    await FinancialTransaction.findByIdAndDelete(id);
-    
-    return NextResponse.json({ message: 'تم حذف المعاملة بنجاح' });
-  } catch (error) {
-    console.error('خطأ في حذف المعاملة المالية:', error);
-    
-    let errorMessage = 'حدث خطأ أثناء معالجة الطلب';
-    if (error instanceof Error) {
-      errorMessage = `${errorMessage}: ${error.message}`;
-    }
-    
-    return NextResponse.json(
-      { message: errorMessage },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: transactionError.message }, { status: 500 });
   }
+
+  if (!transaction) {
+    return NextResponse.json({ message: 'المعاملة غير موجودة' }, { status: 404 });
+  }
+
+  if (transaction.type === 'purchase') {
+    await supabase.from('transactions').delete().match({
+      product_id: transaction.product_id,
+      date: transaction.date,
+      type: 'purchase',
+      quantity: transaction.quantity,
+    });
+  }
+
+  const { error: deleteError } = await supabase.from('financial_transactions').delete().eq('id', id);
+  if (deleteError) {
+    return NextResponse.json({ message: deleteError.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ message: 'تم حذف المعاملة بنجاح' });
 }

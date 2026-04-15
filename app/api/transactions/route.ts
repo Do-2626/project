@@ -1,73 +1,79 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Transaction from '@/models/Transaction';
-import Branch from '@/models/Branch';
-import FinancialTransaction from '@/models/FinancialTransaction'; // Import FinancialTransaction model
-import { dbConnect } from '@/lib/mongoose';
-import mongoose from 'mongoose';
+import { supabase, pickSnake, toCamel } from '@/lib/supabase';
 
 export async function GET(req: NextRequest) {
-  await dbConnect();
-  const { searchParams } = new URL(req.url!);
+  const { searchParams } = new URL(req.url);
   const date = searchParams.get('date');
   const startDate = searchParams.get('startDate');
   const endDate = searchParams.get('endDate');
 
-  let filter: any = {};
+  let query = supabase
+    .from('transactions')
+    .select('*, product_id(*), branch_id(*)')
+    .order('date', { ascending: true });
+
   if (date) {
-    filter.date = date;
+    query = query.eq('date', date);
   } else if (startDate && endDate) {
-    filter.date = { $gte: startDate, $lte: endDate };
+    query = query.gte('date', startDate).lte('date', endDate);
   }
 
-  const transactions = await Transaction.find(filter)
-    .populate('productId')
-    .populate('branchId')
-    .sort({ date: 1 });
+  const { data, error } = await query;
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
-  return NextResponse.json(transactions);
+  return NextResponse.json((data ?? []).map(toCamel));
 }
 
 export async function POST(req: NextRequest) {
-  await dbConnect();
   const body = await req.json();
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  const items = Array.isArray(body) ? body : [body];
+  const results: any[] = [];
 
-  try {
-    const isBulk = Array.isArray(body);
-    const data = isBulk ? body : [body];
-    const results = [];
+  for (const item of items) {
+    const payload = pickSnake(item, [
+      'productId',
+      'quantity',
+      'type',
+      'party',
+      'date',
+      'amount',
+      'category',
+      'branchId',
+      'isRecurring',
+    ]);
 
-    for (const item of data) {
-      const [transaction] = await Transaction.create([item], { session });
+    const { data: insertedTransaction, error: transactionError } = await supabase
+      .from('transactions')
+      .insert(payload)
+      .select()
+      .single();
 
-      if (item.type === 'purchase' || item.type === 'sale') {
-        await FinancialTransaction.create([{
-          type: item.type === 'purchase' ? 'purchase' : 'income',
-          amount: item.amount,
-          category: item.type === 'purchase' ? 'المشتريات' : 'المبيعات',
-          date: item.date,
-          party: item.party,
-          branchId: item.branchId,
-          productId: item.productId,
-          quantity: item.quantity,
-          transactionId: transaction._id,
-        }], { session });
-      }
-      results.push(transaction);
+    if (transactionError) {
+      return NextResponse.json({ error: transactionError.message }, { status: 500 });
     }
 
-    await session.commitTransaction();
-    session.endSession();
+    if (item.type === 'purchase' || item.type === 'sale') {
+      const financialPayload = {
+        type: item.type === 'purchase' ? 'purchase' : 'income',
+        amount: item.amount,
+        category: item.type === 'purchase' ? 'المشتريات' : 'المبيعات',
+        date: item.date,
+        party: item.party,
+        branch_id: item.branchId,
+        product_id: item.productId,
+        quantity: item.quantity,
+        transaction_id: insertedTransaction.id,
+      };
 
-    return NextResponse.json(isBulk ? results : results[0], { status: 201 });
-  } catch (error: any) {
-    await session.abortTransaction();
-    session.endSession();
-    console.error("Transaction error:", error);
-    return NextResponse.json({
-      error: "Failed to process transaction(s)",
-      details: error.message
-    }, { status: 500 });
+      const { error: financeError } = await supabase.from('financial_transactions').insert(financialPayload);
+      if (financeError) {
+        return NextResponse.json({ error: financeError.message }, { status: 500 });
+      }
+    }
+
+    results.push(toCamel(insertedTransaction));
   }
-}
+
+  return NextResponse.json(Array.isArray(body) ? results : results[0], { status: 201 });

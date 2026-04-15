@@ -1,36 +1,50 @@
-import { NextRequest, NextResponse } from "next/server";
-import Product from "@/models/Product";
-import { dbConnect } from "@/lib/mongoose";
+import { NextRequest, NextResponse } from 'next/server';
+import { supabase, toCamel } from '@/lib/supabase';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-    await dbConnect();
-    try {
-        const product = await Product.findById(params.id);
-        if (!product) return NextResponse.json({ error: "المنتج غير موجود" }, { status: 404 });
-        return NextResponse.json(product);
-    } catch (error) {
-        return NextResponse.json({ error: "فشل في جلب المنتج" }, { status: 400 });
+  const { data, error } = await supabase.from('products').select('*').eq('id', params.id).single();
+  if (error) {
+    if (error.code === 'PGRST116') {
+      return NextResponse.json({ error: 'المنتج غير موجود' }, { status: 404 });
     }
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+  return NextResponse.json(toCamel(data));
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
-    await dbConnect();
-    try {
-        const product = await Product.findByIdAndUpdate(params.id, await req.json(), { new: true });
-        if (!product) return NextResponse.json({ error: "المنتج غير موجود" }, { status: 404 });
-        return NextResponse.json(product);
-    } catch (error) {
-        return NextResponse.json({ error: "فشل في تحديث المنتج" }, { status: 400 });
+  const body = await req.json();
+  const payload = {
+    name: body.name,
+    weight: body.weight,
+    purchase_price: body.purchasePrice,
+    selling_price: body.sellingPrice,
+  };
+
+  const { data, error } = await supabase
+    .from('products')
+    .update(payload)
+    .eq('id', params.id)
+    .select()
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') {
+      return NextResponse.json({ error: 'المنتج غير موجود' }, { status: 404 });
     }
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+
+  return NextResponse.json(toCamel(data));
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-    await dbConnect();
-    try {
-        const product = await Product.findByIdAndDelete(params.id);
-        if (!product) return NextResponse.json({ error: "المنتج غير موجود" }, { status: 404 });
-        return NextResponse.json({ success: true });
-    } catch (error) {
-        return NextResponse.json({ error: "فشل في حذف المنتج" }, { status: 400 });
+  const { error } = await supabase.from('products').delete().eq('id', params.id);
+  if (error) {
+    if (error.code === 'PGRST116') {
+      return NextResponse.json({ error: 'المنتج غير موجود' }, { status: 404 });
     }
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+  return NextResponse.json({ success: true });
 }

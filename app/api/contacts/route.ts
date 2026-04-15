@@ -1,27 +1,31 @@
-import { NextRequest, NextResponse } from "next/server";
-import Contact from "@/models/Contact";
-import { dbConnect } from "@/lib/mongoose";
+import { NextRequest, NextResponse } from 'next/server';
+import { supabase, pickSnake, toCamel } from '@/lib/supabase';
 
 export async function GET(req: NextRequest) {
-    await dbConnect();
-    try {
-        const { searchParams } = new URL(req.url);
-        const type = searchParams.get('type');
-        const filter = type ? { type } : {};
-        const contacts = await Contact.find(filter).sort({ name: 1 });
-        return NextResponse.json(contacts);
-    } catch (error: any) {
-        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-    }
+  const { searchParams } = new URL(req.url);
+  const type = searchParams.get('type');
+  let query = supabase.from('contacts').select('*').order('name', { ascending: true });
+
+  if (type) {
+    query = query.eq('type', type);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json((data ?? []).map(toCamel));
 }
 
 export async function POST(req: NextRequest) {
-    await dbConnect();
-    try {
-        const body = await req.json();
-        const contact = await Contact.create(body);
-        return NextResponse.json(contact);
-    } catch (error: any) {
-        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-    }
+  const body = await req.json();
+  const payload = pickSnake(body, ['name', 'type', 'phone']);
+
+  const { data, error } = await supabase.from('contacts').insert(payload).select().single();
+  if (error) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json(toCamel(data));
 }

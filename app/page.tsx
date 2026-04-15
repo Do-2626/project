@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { Package, Receipt, BarChart3, TrendingUp, GitBranch } from "lucide-react";
 import { FaTruckLoading } from "react-icons/fa";
 import Link from "next/link";
-import Branch from "@/models/Branch";
 // import { TodoItem } from "@/components/ui/todo-item";
 
 interface Todo {

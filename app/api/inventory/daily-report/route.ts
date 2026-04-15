@@ -1,126 +1,123 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mongoose from 'mongoose';
-import Transaction from '@/models/Transaction';
-import Product from '@/models/Product';
-import Branch from '@/models/Branch';
-import FinancialTransaction from '@/models/FinancialTransaction';
-import { dbConnect } from '@/lib/mongoose';
+import { supabase, toCamel } from '@/lib/supabase';
 
-// احسب حالة المخزون في بداية ونهاية اليوم
 export async function GET(req: NextRequest) {
-  await dbConnect();
-  const { searchParams } = new URL(req.url!);
+  const { searchParams } = new URL(req.url);
   const date = searchParams.get('date');
   const startDate = searchParams.get('startDate') || date;
   const endDate = searchParams.get('endDate') || date;
   const branchId = searchParams.get('branchId');
 
   if (!startDate || !endDate) {
-    return NextResponse.json({ error: "Date or range is required" }, { status: 400 });
+    return NextResponse.json({ error: 'Date or range is required' }, { status: 400 });
   }
 
-  const matchStageBefore: any = { date: { $lt: startDate } };
-  const matchStageAfter: any = { date: { $lte: endDate } };
-  const duringInventoryFilter: any = { date: { $gte: startDate, $lte: endDate } };
-  const duringFinanceFilter: any = { date: { $gte: startDate, $lte: endDate }, type: { $in: ['expense', 'income'] } };
+  const productRes = await supabase.from('products').select('*');
+  if (productRes.error) {
+    return NextResponse.json({ error: productRes.error.message }, { status: 500 });
+  }
+
+  const baseBeforeQuery = supabase.from('transactions').select('product_id, type, quantity').lt('date', startDate);
+  const baseAfterQuery = supabase.from('transactions').select('product_id, type, quantity').lte('date', endDate);
+  const duringInventoryQuery = supabase
+    .from('transactions')
+    .select('*, product_id(*), branch_id(*)')
+    .gte('date', startDate)
+    .lte('date', endDate);
+  const duringFinanceQuery = supabase
+    .from('financial_transactions')
+    .select('*, branch_id(*), expense_category_id(*)')
+    .gte('date', startDate)
+    .lte('date', endDate)
+    .in('type', ['expense', 'income']);
 
   if (branchId) {
-    const bId = new mongoose.Types.ObjectId(branchId);
-    matchStageBefore.branchId = bId;
-    matchStageAfter.branchId = bId;
-    duringInventoryFilter.branchId = bId;
-    duringFinanceFilter.branchId = bId;
+    baseBeforeQuery.eq('branch_id', branchId);
+    baseAfterQuery.eq('branch_id', branchId);
+    duringInventoryQuery.eq('branch_id', branchId);
+    duringFinanceQuery.eq('branch_id', branchId);
   }
 
-  // جميع المنتجات
-  const products = await Product.find({});
-
-  // العمليات حتى بداية اليوم (قبل هذا اليوم)
-  const before = await Transaction.aggregate([
-    { $match: matchStageBefore },
-    {
-      $group: {
-        _id: '$productId',
-        purchase: { $sum: { $cond: [{ $eq: ['$type', 'purchase'] }, '$quantity', 0] } },
-        outgoing: { $sum: { $cond: [{ $eq: ['$type', 'outgoing'] }, '$quantity', 0] } },
-        incoming: { $sum: { $cond: [{ $eq: ['$type', 'incoming'] }, '$quantity', 0] } },
-        damaged: { $sum: { $cond: [{ $eq: ['$type', 'damaged'] }, '$quantity', 0] } },
-        sale: { $sum: { $cond: [{ $eq: ['$type', 'sale'] }, '$quantity', 0] } },
-      }
-    }
+  const [beforeRes, duringInventoryRes, duringFinanceRes, afterRes, actualSalesRes] = await Promise.all([
+    baseBeforeQuery,
+    duringInventoryQuery,
+    duringFinanceQuery,
+    baseAfterQuery,
+    supabase
+      .from('financial_transactions')
+      .select('product_id, amount, quantity, date')
+      .gte('date', startDate)
+      .lte('date', endDate)
+      .eq('type', 'income')
+      .is('product_id', 'not.null'),
   ]);
 
-  // العمليات المخزنية خلال اليوم
-  const duringInventory = await Transaction.find(duringInventoryFilter).populate('productId').populate('branchId');
+  if (beforeRes.error) return NextResponse.json({ error: beforeRes.error.message }, { status: 500 });
+  if (duringInventoryRes.error) return NextResponse.json({ error: duringInventoryRes.error.message }, { status: 500 });
+  if (duringFinanceRes.error) return NextResponse.json({ error: duringFinanceRes.error.message }, { status: 500 });
+  if (afterRes.error) return NextResponse.json({ error: afterRes.error.message }, { status: 500 });
+  if (actualSalesRes.error) return NextResponse.json({ error: actualSalesRes.error.message }, { status: 500 });
 
-  // العمليات المالية (المصاريف) خلال اليوم
-  const duringFinance = await FinancialTransaction.find(duringFinanceFilter).populate('branchId').populate('expenseCategoryId');
+  const products = productRes.data ?? [];
+  const before = beforeRes.data ?? [];
+  const duringInventory = duringInventoryRes.data ?? [];
+  const duringFinance = duringFinanceRes.data ?? [];
+  const actualSales = actualSalesRes.data ?? [];
 
-  // دمج العمليات
+  const aggregateByProduct = (rows: any[]) =>
+    rows.reduce((map, row) => {
+      const key = String(row.product_id);
+      const item = map[key] || { purchase: 0, outgoing: 0, incoming: 0, damaged: 0, sale: 0 };
+      if (row.type === 'purchase') item.purchase += row.quantity ?? 0;
+      if (row.type === 'outgoing') item.outgoing += row.quantity ?? 0;
+      if (row.type === 'incoming') item.incoming += row.quantity ?? 0;
+      if (row.type === 'damaged') item.damaged += row.quantity ?? 0;
+      if (row.type === 'sale') item.sale += row.quantity ?? 0;
+      map[key] = item;
+      return map;
+    }, {} as Record<string, any>);
+
+  const beforeMap = aggregateByProduct(before);
+  const afterMap = aggregateByProduct(afterRes.data ?? []);
+  const actualSalesMap = (actualSales as any[]).reduce((map, row) => {
+    const key = String(row.product_id);
+    map[key] = {
+      totalAmount: (map[key]?.totalAmount || 0) + (row.amount || 0),
+      totalQuantity: (map[key]?.totalQuantity || 0) + (row.quantity || 0),
+    };
+    return map;
+  }, {} as Record<string, any>);
+
   const during = [
-    ...duringInventory.map(t => t.toObject()),
-    ...duringFinance.map(f => ({
-      ...f.toObject(),
-      isFinancial: true
-    }))
+    ...(duringInventory as any[]).map(toCamel),
+    ...(duringFinance as any[]).map((item) => ({ ...toCamel(item), isFinancial: true })),
   ];
 
-  // العمليات حتى نهاية اليوم (<= هذا اليوم)
-  const after = await Transaction.aggregate([
-    { $match: matchStageAfter },
-    {
-      $group: {
-        _id: '$productId',
-        purchase: { $sum: { $cond: [{ $eq: ['$type', 'purchase'] }, '$quantity', 0] } },
-        outgoing: { $sum: { $cond: [{ $eq: ['$type', 'outgoing'] }, '$quantity', 0] } },
-        incoming: { $sum: { $cond: [{ $eq: ['$type', 'incoming'] }, '$quantity', 0] } },
-        damaged: { $sum: { $cond: [{ $eq: ['$type', 'damaged'] }, '$quantity', 0] } },
-        sale: { $sum: { $cond: [{ $eq: ['$type', 'sale'] }, '$quantity', 0] } },
-      }
-    }
-  ]);
+  const report = (products as any[])
+    .map((prod) => {
+      const productIdStr = String(prod.id);
+      const b = beforeMap[productIdStr] || { purchase: 0, outgoing: 0, incoming: 0, damaged: 0, sale: 0 };
+      const a = afterMap[productIdStr] || { purchase: 0, outgoing: 0, incoming: 0, damaged: 0, sale: 0 };
 
-  // المبيعات المسجلة فعلياً (كمية ومبالغ)
-  const actualSalesAggr = await FinancialTransaction.aggregate([
-    { $match: { ...duringFinanceFilter, type: 'income', productId: { $exists: true } } },
-    {
-      $group: {
-        _id: '$productId',
-        totalAmount: { $sum: '$amount' },
-        totalQuantity: { $sum: '$quantity' }
-      }
-    }
-  ]);
+      const periodLoading = (duringInventory as any[])
+        .filter((t) => String(t.product_id) === productIdStr && t.type === 'outgoing')
+        .reduce((acc, curr) => acc + (curr.quantity || 0), 0);
+      const periodReturns = (duringInventory as any[])
+        .filter((t) => String(t.product_id) === productIdStr && t.type === 'incoming')
+        .reduce((acc, curr) => acc + (curr.quantity || 0), 0);
 
-  // تحويل النتائج إلى كائنات يسهل التعامل معها
-  const beforeMap = Object.fromEntries(before.map(b => [String(b._id), b]));
-  const afterMap = Object.fromEntries(after.map(b => [String(b._id), b]));
-  const actualSalesMap = Object.fromEntries(actualSalesAggr.map(s => [String(s._id), s]));
+      return {
+        product: toCamel(prod),
+        startQty: (b.purchase + b.incoming) - (b.outgoing + b.damaged + b.sale),
+        endQty: (a.purchase + a.incoming) - (a.outgoing + a.damaged + a.sale),
+        expectedSales: periodLoading - periodReturns,
+        actualSalesAmount: actualSalesMap[productIdStr]?.totalAmount || 0,
+        actualSalesQty: actualSalesMap[productIdStr]?.totalQuantity || 0,
+        hasActivity:
+          periodLoading !== 0 || periodReturns !== 0 || (actualSalesMap[productIdStr]?.totalQuantity || 0) !== 0,
+      };
+    })
+    .filter((item) => item.startQty !== 0 || item.endQty !== 0 || item.hasActivity);
 
-  // بناء تقرير لكل منتج
-  const report = products.map(prod => {
-    const productIdStr = String(prod._id);
-    const b = beforeMap[productIdStr] || { purchase: 0, outgoing: 0, incoming: 0, damaged: 0, sale: 0 };
-    const a = afterMap[productIdStr] || { purchase: 0, outgoing: 0, incoming: 0, damaged: 0, sale: 0 };
-
-    // حساب المبيعات المتوقعة للفترة المختارة: إجمالي التحميل - إجمالي المرتجع خلال هذه الفترة
-    // هذا يدعم المناديب الذين يسوون حساباتهم بعد عدة أيام عند اختيار الفترة (أسبوع مثلاً)
-    const periodLoading = duringInventory.filter(t => String(t.productId._id) === productIdStr && t.type === 'outgoing').reduce((acc, curr) => acc + curr.quantity, 0);
-    const periodReturns = duringInventory.filter(t => String(t.productId._id) === productIdStr && t.type === 'incoming').reduce((acc, curr) => acc + curr.quantity, 0);
-
-    return {
-      product: prod,
-      startQty: (b.purchase + b.incoming) - (b.outgoing + b.damaged + b.sale),
-      endQty: (a.purchase + a.incoming) - (a.outgoing + a.damaged + a.sale),
-      expectedSales: (periodLoading - periodReturns),
-      actualSalesAmount: actualSalesMap[productIdStr]?.totalAmount || 0,
-      actualSalesQty: actualSalesMap[productIdStr]?.totalQuantity || 0,
-      hasActivity: periodLoading !== 0 || periodReturns !== 0 || (actualSalesMap[productIdStr]?.totalQuantity || 0) !== 0
-    };
-  }).filter(item => item.startQty !== 0 || item.endQty !== 0 || item.hasActivity);
-
-  return NextResponse.json({
-    report,
-    during
-  });
+  return NextResponse.json({ report, during });
 }

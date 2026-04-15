@@ -6,7 +6,6 @@ import Calendar from "@/components/Calendar";
 import dayjs from "dayjs";
 import PasswordPrompt from "@/components/PasswordPrompt";
 import ExportButton from "@/components/ExportButton";
-import { Types } from "mongoose";
 import ExportButtonCSV from "@/components/ExportButtonCSV";
 import Link from "next/link";
 
@@ -39,10 +38,10 @@ interface FinancialTransaction {
   party?: string;
   date: string;
   invoiceNumber?: string;
-  productId?: string | Types.ObjectId;
+  productId?: string;
   quantity?: number;
-  branchId?: string | Types.ObjectId;
-  expenseCategoryId?: string | Types.ObjectId;
+  branchId?: string;
+  expenseCategoryId?: string;
   expenseSubtype?: string;
   isRecurring: boolean;
   createdAt: string;

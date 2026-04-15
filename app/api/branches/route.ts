@@ -1,42 +1,51 @@
-import { NextRequest, NextResponse } from "next/server";
-import Branch from "@/models/Branch";
-import { dbConnect } from "@/lib/mongoose";
+import { NextRequest, NextResponse } from 'next/server';
+import { supabase, pickSnake, toCamel } from '@/lib/supabase';
 
 export async function GET(req: NextRequest) {
-  await dbConnect();
-  try {
-    const branches = await Branch.find({ isActive: true });
-    return NextResponse.json(branches);
-  } catch (error) {
-    return NextResponse.json({ error: "Failed to fetch branches" }, { status: 500 });
+  const { data, error } = await supabase
+    .from('branches')
+    .select('*')
+    .eq('is_active', true)
+    .order('name', { ascending: true });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  return NextResponse.json((data ?? []).map(toCamel));
 }
 
 export async function POST(req: NextRequest) {
-  await dbConnect();
-  try {
-    const body = await req.json();
-    
-    // التحقق من وجود الاسم
-    if (!body.name) {
-      return NextResponse.json(
-        { error: "اسم الفرع مطلوب" },
-        { status: 400 }
-      );
-    }
+  const body = await req.json();
 
-    // التحقق من عدم تكرار الاسم
-    const existingBranch = await Branch.findOne({ name: body.name });
-    if (existingBranch) {
-      return NextResponse.json(
-        { error: "هذا الفرع موجود بالفعل" },
-        { status: 400 }
-      );
-    }
-
-    const branch = await Branch.create(body);
-    return NextResponse.json(branch, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ error: "Failed to create branch" }, { status: 500 });
+  if (!body.name) {
+    return NextResponse.json({ error: 'اسم الفرع مطلوب' }, { status: 400 });
   }
+
+  const { data: existing, error: existingError } = await supabase
+    .from('branches')
+    .select('id')
+    .eq('name', body.name)
+    .single();
+
+  if (existingError && existingError.code !== 'PGRST116') {
+    return NextResponse.json({ error: existingError.message }, { status: 500 });
+  }
+
+  if (existing) {
+    return NextResponse.json({ error: 'هذا الفرع موجود بالفعل' }, { status: 400 });
+  }
+
+  const payload = {
+    ...pickSnake(body, ['name', 'location', 'settlementType', 'isActive']),
+    is_active: body.isActive ?? true,
+  };
+
+  const { data, error } = await supabase.from('branches').insert(payload).select().single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json(toCamel(data), { status: 201 });
 }
