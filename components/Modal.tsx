@@ -468,6 +468,7 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
       { type: 'transfer', label: 'تحويل', icon: <FaRightLeft />, color: 'blue' },
       { type: 'dailyExpense', label: 'مصروف', icon: <FaWallet />, color: 'orange' },
       { type: 'damaged', label: 'تالف', icon: <FaBan />, color: 'purple' },
+      { type: 'addProduct', label: 'إضافة صنف جديد', icon: <FaCartPlus />, color: 'teal' },
     ];
 
     body = (
