@@ -2,20 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase, toCamel } from '@/lib/supabase';
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const date = searchParams.get('date');
-  const startDate = searchParams.get('startDate') || date;
-  const endDate = searchParams.get('endDate') || date;
-  const branchId = searchParams.get('branchId');
+  try {
+    const { searchParams } = new URL(req.url);
+    const date = searchParams.get('date');
+    const startDate = searchParams.get('startDate') || date;
+    const endDate = searchParams.get('endDate') || date;
+    const branchId = searchParams.get('branchId');
 
-  if (!startDate || !endDate) {
-    return NextResponse.json({ error: 'Date or range is required' }, { status: 400 });
-  }
+    if (!startDate || !endDate) {
+      return NextResponse.json({ error: 'Date or range is required' }, { status: 400 });
+    }
 
-  const productRes = await supabase.from('products').select('*');
-  if (productRes.error) {
-    return NextResponse.json({ error: productRes.error.message }, { status: 500 });
-  }
+    const productRes = await supabase.from('products').select('*');
+    if (productRes.error) {
+      return NextResponse.json({ error: productRes.error.message }, { status: 500 });
+    }
 
   const baseBeforeQuery = supabase.from('transactions').select('product_id, type, quantity').lt('date', startDate);
   const baseAfterQuery = supabase.from('transactions').select('product_id, type, quantity').lte('date', endDate);
@@ -49,7 +50,7 @@ export async function GET(req: NextRequest) {
       .gte('date', startDate)
       .lte('date', endDate)
       .eq('type', 'income')
-      .is('product_id', 'not.null'),
+      .not('product_id', 'is', null),
   ]);
 
   if (beforeRes.error) return NextResponse.json({ error: beforeRes.error.message }, { status: 500 });
@@ -120,4 +121,8 @@ export async function GET(req: NextRequest) {
     .filter((item) => item.startQty !== 0 || item.endQty !== 0 || item.hasActivity);
 
   return NextResponse.json({ report, during });
+  } catch (error: any) {
+    console.error('Daily report failed:', error);
+    return NextResponse.json({ error: error?.message || 'Unknown error' }, { status: 500 });
+  }
 }
