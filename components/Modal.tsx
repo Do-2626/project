@@ -60,27 +60,30 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
   };
 
   const handleQuantityChange = (productId: string, quantity: number) => {
+    // تحويل المعرف إلى string بشكل صريح لتجنب مشاكل التطابق
+    const key = String(productId);
     setQuantities((prev) => ({
       ...prev,
-      [productId]: quantity,
+      [key]: quantity,
     }));
 
     // تحديث السعر تلقائياً إذا كان بيعاً
     if (type === "sale") {
-      const product = products.find((p: any) => p._id === productId);
+      const product = products.find((p: any) => String(p._id) === key);
       if (product && product.sellingPrice) {
         setAmounts((prev) => ({
           ...prev,
-          [productId]: quantity * product.sellingPrice,
+          [key]: quantity * product.sellingPrice,
         }));
       }
     }
   };
 
   const handleAmountChange = (productId: string, amount: number) => {
+    const key = String(productId);
     setAmounts((prev) => ({
       ...prev,
-      [productId]: amount,
+      [key]: amount,
     }));
   };
 
@@ -175,7 +178,9 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
 
       for (const [productId, quantity] of Object.entries(quantities)) {
         if (quantity > 0) {
-          const product = products.find((p: any) => p._id === productId);
+          const product = products.find((p: any) => String(p._id) === String(productId));
+          if (!product) continue;
+          
           const transaction: any = {
             productId,
             quantity,

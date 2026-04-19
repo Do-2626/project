@@ -57,18 +57,19 @@ export default function BulkTransactionTable({
           {products.map((product) => {
             // البحث عن المخزون الحالي للمنتج من التقرير اليومي
             const reportItem = dailyReport?.find(
-              (item) => item.product._id === product._id
+              (item) => String(item.product._id) === String(product._id)
             );
             const currentStock = reportItem ? reportItem.endQty : 0;
-            const quantity = quantities[product._id] || 0;
-            const amount = amounts[product._id] || 0;
+            const productKey = String(product._id);
+            const quantity = quantities[productKey] || 0;
+            const amount = amounts[productKey] || 0;
             const expected = calculateExpected(currentStock, quantity);
             const isModified = quantity > 0;
             const isNegative = expected < 0;
 
             return (
               <tr
-                key={product._id}
+                key={productKey}
                 className={`border-b border-gray-700 hover:bg-gray-700 transition-colors ${isModified ? "bg-gray-800 bg-opacity-60" : "bg-gray-800"
                   }`}
               >
@@ -83,7 +84,7 @@ export default function BulkTransactionTable({
                     value={quantity === 0 ? "" : quantity}
                     onChange={(e) =>
                       onQuantityChange(
-                        product._id,
+                        productKey,
                         parseInt(e.target.value) || 0
                       )
                     }
@@ -101,7 +102,7 @@ export default function BulkTransactionTable({
                       value={amount === 0 ? "" : amount}
                       onChange={(e) =>
                         onAmountChange(
-                          product._id,
+                          productKey,
                           parseFloat(e.target.value) || 0
                         )
                       }
