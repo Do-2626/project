@@ -46,11 +46,20 @@ export default function InventoryPage() {
   useEffect(() => {
     setIsLoadingReport(true);
     fetch(`/api/inventory/daily-report?date=${selectedDate}`)
-      .then(res => res.json())
-      .then(data => {
-        setDailyReport(data);
-        setIsLoadingReport(false);
-      });
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) {
+          console.error('Daily report error:', data);
+          setDailyReport({ report: [] });
+        } else {
+          setDailyReport(data);
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to load daily report:', error);
+        setDailyReport({ report: [] });
+      })
+      .finally(() => setIsLoadingReport(false));
   }, [selectedDate, products]);
 
   const handleUpdateProduct = async (updatedProduct: Product) => {

@@ -21,12 +21,12 @@ export async function GET(req: NextRequest) {
   const baseAfterQuery = supabase.from('transactions').select('product_id, type, quantity').lte('date', endDate);
   const duringInventoryQuery = supabase
     .from('transactions')
-    .select('*, product_id(*), branch_id(*)')
+    .select('product_id, type, quantity, branch_id')
     .gte('date', startDate)
     .lte('date', endDate);
   const duringFinanceQuery = supabase
     .from('financial_transactions')
-    .select('*, branch_id(*), expense_category_id(*)')
+    .select('product_id, amount, quantity, date, type, branch_id, expense_category_id')
     .gte('date', startDate)
     .lte('date', endDate)
     .in('type', ['expense', 'income']);
