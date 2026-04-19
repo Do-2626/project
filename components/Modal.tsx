@@ -26,6 +26,7 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [amounts, setAmounts] = useState<Record<string, number>>({});
   const [contacts, setContacts] = useState<any[]>([]);
+  const [newProducts, setNewProducts] = useState<Record<string, any>>({}); // لتخزين المنتجات الجديدة
 
   // جلب الفروع عند فتح النافذة
   React.useEffect(() => {
@@ -33,6 +34,8 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
       setQuantities({});
       setAmounts({});
       setForm({});
+      setNewProducts({});
+      setShowPassword(false);
       fetch("/api/branches")
         .then((res) => res.json())
         .then((data) => setBranches(data))
@@ -84,15 +87,19 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     if (type === "addProduct") {
+      // جمع المنتجات الجديدة
+      const productsToAdd = Object.values(newProducts).filter(p => p.name && p.purchasePrice && p.sellingPrice);
+      
+      if (productsToAdd.length === 0) {
+        alert("يرجى إضافة منتج واحد على الأقل");
+        return;
+      }
+
+      // إرسال جميع المنتجات دفعة واحدة
       await fetch("/api/inventory", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.name,
-          weight: form.weight,
-          purchasePrice: Number(form.purchasePrice),
-          sellingPrice: Number(form.sellingPrice),
-        }),
+        body: JSON.stringify(productsToAdd),
       });
     } else if (type === "dailyExpense") {
       const selectedCategory = expenseCategories.find(c => c._id === form.expenseCategoryId);
@@ -215,22 +222,87 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
   // حقول إضافة صنف
   const addProductFields = (
     <>
-      <div>
-        <label className="block mb-2 text-sm font-medium text-gray-300">اسم الصنف</label>
-        <input name="name" onChange={handleChange} className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5" required />
+      <div className="overflow-x-auto max-h-[400px] overflow-y-auto border border-gray-600 rounded-lg mb-4">
+        <table className="w-full text-sm text-right text-gray-300">
+          <thead className="text-xs uppercase bg-gray-700 text-gray-300 sticky top-0 z-10">
+            <tr>
+              <th className="px-4 py-3">اسم الصنف</th>
+              <th className="px-4 py-3">الوزن</th>
+              <th className="px-4 py-3">سعر الشراء</th>
+              <th className="px-4 py-3">سعر البيع</th>
+              <th className="px-4 py-3 text-center">إجراء</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Object.entries(newProducts).map(([id, product], index) => (
+              <tr key={id} className="border-b border-gray-700 hover:bg-gray-700 transition-colors">
+                <td className="px-4 py-2">
+                  <input
+                    type="text"
+                    value={product.name || ""}
+                    onChange={(e) => setNewProducts({ ...newProducts, [id]: { ...product, name: e.target.value } })}
+                    className="bg-gray-600 border border-gray-500 text-white rounded w-full p-1.5"
+                    placeholder="اسم الصنف"
+                    required
+                  />
+                </td>
+                <td className="px-4 py-2">
+                  <input
+                    type="text"
+                    value={product.weight || ""}
+                    onChange={(e) => setNewProducts({ ...newProducts, [id]: { ...product, weight: e.target.value } })}
+                    className="bg-gray-600 border border-gray-500 text-white rounded w-full p-1.5"
+                    placeholder="الوزن (اختياري)"
+                  />
+                </td>
+                <td className="px-4 py-2">
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={product.purchasePrice || ""}
+                    onChange={(e) => setNewProducts({ ...newProducts, [id]: { ...product, purchasePrice: parseFloat(e.target.value) } })}
+                    className="bg-gray-600 border border-gray-500 text-white rounded w-full p-1.5"
+                    placeholder="0.00"
+                    required
+                  />
+                </td>
+                <td className="px-4 py-2">
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={product.sellingPrice || ""}
+                    onChange={(e) => setNewProducts({ ...newProducts, [id]: { ...product, sellingPrice: parseFloat(e.target.value) } })}
+                    className="bg-gray-600 border border-gray-500 text-white rounded w-full p-1.5"
+                    placeholder="0.00"
+                    required
+                  />
+                </td>
+                <td className="px-4 py-2 text-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updatedProducts = { ...newProducts };
+                      delete updatedProducts[id];
+                      setNewProducts(updatedProducts);
+                    }}
+                    className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded transition"
+                  >
+                    حذف
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-      <div>
-        <label className="block mb-2 text-sm font-medium text-gray-300">الوزن (اختياري)</label>
-        <input name="weight" onChange={handleChange} className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5" />
-      </div>
-      <div>
-        <label className="block mb-2 text-sm font-medium text-gray-300">سعر الشراء</label>
-        <input name="purchasePrice" type="number" step="0.01" onChange={handleChange} className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5" required />
-      </div>
-      <div>
-        <label className="block mb-2 text-sm font-medium text-gray-300">سعر البيع</label>
-        <input name="sellingPrice" type="number" step="0.01" onChange={handleChange} className="bg-gray-700 border border-gray-600 text-white rounded-lg w-full p-2.5" required />
-      </div>
+      
+      <button
+        type="button"
+        onClick={() => setNewProducts({ ...newProducts, [Date.now()]: {} })}
+        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition w-full mb-4 font-bold"
+      >
+        + إضافة صنف جديد
+      </button>
     </>
   );
 

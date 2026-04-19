@@ -16,12 +16,19 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const payload = pickSnake(body, ['name', 'weight', 'purchasePrice', 'sellingPrice']);
-  const { data, error } = await supabase.from('products').insert(payload).select().single();
+  
+  // دعم إضافة منتج واحد أو عدة منتجات
+  const productsArray = Array.isArray(body) ? body : [body];
+  
+  const payloads = productsArray.map(item => 
+    pickSnake(item, ['name', 'weight', 'purchasePrice', 'sellingPrice'])
+  );
+  
+  const { data, error } = await supabase.from('products').insert(payloads).select();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(toCamel(data), { status: 201 });
+  return NextResponse.json((data ?? []).map(toCamel), { status: 201 });
 }
