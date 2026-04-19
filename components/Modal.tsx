@@ -60,7 +60,7 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
   };
 
   const handleQuantityChange = (productId: string, quantity: number) => {
-    // تحويل المعرف إلى string بشكل صريح لتجنب مشاكل التطابق
+    // استخدام المعرف مباشرة (قد يحتوي على index)
     const key = String(productId);
     setQuantities((prev) => ({
       ...prev,
@@ -69,7 +69,8 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
 
     // تحديث السعر تلقائياً إذا كان بيعاً
     if (type === "sale") {
-      const product = products.find((p: any) => String(p._id) === key);
+      // البحث عن المنتج باستخدام index أو ID
+      const product = products.find((p: any) => String(p._id) === key || productId.startsWith(String(p._id)));
       if (product && product.sellingPrice) {
         setAmounts((prev) => ({
           ...prev,
@@ -135,11 +136,15 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
         return;
       }
 
-      for (const [productId, quantity] of Object.entries(quantities)) {
+      for (const [indexKey, quantity] of Object.entries(quantities)) {
         if (quantity > 0) {
+          const index = parseInt(indexKey);
+          const product = products[index];
+          if (!product) continue;
+          
           // 1. مرتجع من الفرع الأول إلى المخزون
           transactionsToSubmit.push({
-            productId,
+            productId: product._id,
             quantity,
             type: "incoming",
             party: "المخزون (تحويل)",
@@ -149,7 +154,7 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
 
           // 2. تحميل على الفرع الثاني من المخزون
           transactionsToSubmit.push({
-            productId,
+            productId: product._id,
             quantity,
             type: "outgoing",
             party: `تحويل من ${fromBranch.name}`,
@@ -176,28 +181,28 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
         ? branches.find(b => b._id === form.branchId)?.name
         : form.party;
 
-      for (const [productId, quantity] of Object.entries(quantities)) {
+      for (const [indexKey, quantity] of Object.entries(quantities)) {
         if (quantity > 0) {
-          const product = products.find((p: any) => String(p._id) === String(productId));
+          const index = parseInt(indexKey);
+          const product = products[index];
           if (!product) continue;
           
           const transaction: any = {
-            productId,
+            productId: product._id,
             quantity,
             type,
-            party: branchName || form.party, // استخدام اسم الفرع كجهة أو الجهة المدخلة
+            party: branchName || form.party,
             branchId: form.branchId,
             date: selectedDate,
           };
 
           if (type === "purchase" && product) {
-            // المشتريات تأتي من مورد وليس من فرع
             transaction.party = form.party;
             transaction.branchId = null;
             transaction.amount = quantity * (product.purchasePrice || 0);
           } else if (type === "sale" && product) {
-            transaction.amount = amounts[productId] !== undefined && amounts[productId] !== 0
-              ? amounts[productId]
+            transaction.amount = amounts[indexKey] !== undefined && amounts[indexKey] !== 0
+              ? amounts[indexKey]
               : quantity * (product.sellingPrice || 0);
           }
 

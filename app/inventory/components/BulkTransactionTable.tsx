@@ -54,22 +54,22 @@ export default function BulkTransactionTable({
           </tr>
         </thead>
         <tbody>
-          {products.map((product) => {
-            // البحث عن المخزون الحالي للمنتج من التقرير اليومي
+          {products.map((product, index) => {
+            // استخدام index كمفتاح فريد لأن IDs قد تكون متطابقة
+            const uniqueKey = String(index);
             const reportItem = dailyReport?.find(
               (item) => String(item.product._id) === String(product._id)
             );
             const currentStock = reportItem ? reportItem.endQty : 0;
-            const productKey = String(product._id);
-            const quantity = quantities[productKey] || 0;
-            const amount = amounts[productKey] || 0;
+            const quantity = quantities[uniqueKey] || 0;
+            const amount = amounts[uniqueKey] || 0;
             const expected = calculateExpected(currentStock, quantity);
             const isModified = quantity > 0;
             const isNegative = expected < 0;
 
             return (
               <tr
-                key={productKey}
+                key={`product-${index}`}
                 className={`border-b border-gray-700 hover:bg-gray-700 transition-colors ${isModified ? "bg-gray-800 bg-opacity-60" : "bg-gray-800"
                   }`}
               >
@@ -84,7 +84,7 @@ export default function BulkTransactionTable({
                     value={quantity === 0 ? "" : quantity}
                     onChange={(e) =>
                       onQuantityChange(
-                        productKey,
+                        uniqueKey,
                         parseInt(e.target.value) || 0
                       )
                     }
@@ -102,7 +102,7 @@ export default function BulkTransactionTable({
                       value={amount === 0 ? "" : amount}
                       onChange={(e) =>
                         onAmountChange(
-                          productKey,
+                          uniqueKey,
                           parseFloat(e.target.value) || 0
                         )
                       }
