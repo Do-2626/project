@@ -38,9 +38,15 @@ export function toCamel<T>(value: T): T {
   }
 
   if (isObject(value)) {
-    return Object.fromEntries(
+    const converted = Object.fromEntries(
       Object.entries(value).map(([key, item]) => [toCamelCase(key), toCamel(item)])
-    ) as T;
+    ) as any;
+
+    if (converted.id !== undefined && converted._id === undefined) {
+      converted._id = converted.id;
+    }
+
+    return converted as T;
   }
 
   return value;
