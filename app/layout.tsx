@@ -1,6 +1,8 @@
+// @ts-ignore
 import './globals.css';
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { Providers } from './providers';
+import Header from './components/Header';
 
 export const metadata: Metadata = {
   title: "تطبيق المخزون",
@@ -21,9 +23,12 @@ export default function RootLayout({
         // className={`${inter.className} min-h-screen antialiased bg-background`}
         className={`min-h-screen antialiased bg-gradient-to-br from-gray-900 via-gray-800 to-blue-900 bg-fixed text-gray-300 font-cairo`}
       >
-        <main className="container mx-auto max-w-5xl">
-          {children}
-        </main>
+        <Providers>
+          <Header />
+          <main className="container mx-auto max-w-5xl">
+            {children}
+          </main>
+        </Providers>
       </body>
     </html>
   );

@@ -51,15 +51,6 @@ export const useDailyLog = (initialTransactions: Transaction[]) => {
   };
 
   const handleDelete = async (id: string) => {
-    const password = prompt("أدخل كلمة المرور:");
-    if (!password) {
-      alert("يجب إدخال كلمة مرور");
-      return;
-    }
-    if (password !== "mo123") {
-      alert("كلمة المرور غير صحيحة");
-      return;
-    }
     setIsLoading(true);
     try {
       await fetch(`/api/transactions/${id}`, {

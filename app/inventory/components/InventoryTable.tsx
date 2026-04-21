@@ -158,7 +158,7 @@ export default function InventoryTable({
               className: "text-center",
               render: (product: Product) => (
                 <span className="text-gray-400 font-mono">
-                  {Number(product.purchasePrice || 0).toLocaleString()}
+                  {Number(product.purchasePrice || 0).toLocaleString('en-US')}
                 </span>
               )
             }
@@ -168,7 +168,7 @@ export default function InventoryTable({
             className: "text-center",
             render: (product) => (
               <span className="text-yellow-500 font-bold">
-                {Number(product.sellingPrice || 0).toLocaleString()}
+                {Number(product.sellingPrice || 0).toLocaleString('en-US')}
               </span>
             )
           },
@@ -180,7 +180,7 @@ export default function InventoryTable({
                 const qty = getCurrentQuantity(product._id);
                 return (
                   <span className="font-black text-[#1173d4]">
-                    {(qty * (product.purchasePrice || 0)).toLocaleString()}
+                    {(qty * (product.purchasePrice || 0)).toLocaleString('en-US')}
                   </span>
                 );
               }

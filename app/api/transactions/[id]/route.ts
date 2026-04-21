@@ -1,13 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase, pickSnake, toCamel } from '@/lib/supabase';
+import { getUser } from '@/lib/auth';
+import { transactionUpdateSchema } from '@/lib/validation';
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const user = await getUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const id = params.id;
   const body = await request.json();
-  const payload = pickSnake(body, [
+
+  // Validate body with Zod
+  const validatedBody = transactionUpdateSchema.parse(body);
+
+  const payload = pickSnake(validatedBody, [
     'productId',
     'quantity',
     'type',
@@ -53,6 +64,11 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const user = await getUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const id = params.id;
 
   const { data: deletedTransaction, error: deleteError } = await supabase

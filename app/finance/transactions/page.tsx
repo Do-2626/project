@@ -4,7 +4,6 @@ import React, { useEffect, useState } from "react";
 import { FaMoneyBillWave, FaShoppingCart, FaReceipt, FaPlus, FaSearch } from "react-icons/fa";
 import Calendar from "@/components/Calendar";
 import dayjs from "dayjs";
-import PasswordPrompt from "@/components/PasswordPrompt";
 import ExportButton from "@/components/ExportButton";
 import ExportButtonCSV from "@/components/ExportButtonCSV";
 import Link from "next/link";
@@ -67,7 +66,6 @@ const purchaseCategories = [
 ];
 
 export default function FinancialTransactionsPage() {
-  const [isAuthorized, setIsAuthorized] = useState(false);
   const [transactions, setTransactions] = useState<FinancialTransaction[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
@@ -103,27 +101,23 @@ export default function FinancialTransactionsPage() {
 
   // جلب المعاملات المالية
   useEffect(() => {
-    if (isAuthorized) {
-      fetchTransactions();
-    }
-  }, [selectedDate, isAuthorized, filterType]);
+    fetchTransactions();
+  }, [selectedDate, filterType]);
 
   // جلب المنتجات والفروع والتصنيفات
   useEffect(() => {
-    if (isAuthorized) {
-      fetch("/api/inventory")
-        .then((res) => res.json())
-        .then(setProducts);
-      
-      fetch("/api/branches")
-        .then((res) => res.json())
-        .then(setBranches);
+    fetch("/api/inventory")
+      .then((res) => res.json())
+      .then(setProducts);
 
-      fetch("/api/expense-categories")
-        .then((res) => res.json())
-        .then(setDbExpenseCategories);
-    }
-  }, [isAuthorized]);
+    fetch("/api/branches")
+      .then((res) => res.json())
+      .then(setBranches);
+
+    fetch("/api/expense-categories")
+      .then((res) => res.json())
+      .then(setDbExpenseCategories);
+  }, []);
 
   // تحديث تاريخ النموذج عند تغيير التاريخ المحدد
   useEffect(() => {
@@ -327,23 +321,6 @@ export default function FinancialTransactionsPage() {
   };
 
   const { totalExpenses, totalIncome, totalPurchases } = calculateTotals();
-
-  if (!isAuthorized) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-blue-900 p-6">
-        <div className="max-w-4xl mx-auto bg-gray-800 p-8 rounded-xl shadow-lg">
-          <h1 className="text-3xl font-bold text-center text-white mb-8">
-            المعاملات المالية
-          </h1>
-          <PasswordPrompt
-            onSuccess={() => setIsAuthorized(true)}
-            label="أدخل كلمة المرور للوصول إلى المعاملات المالية"
-            buttonText="تأكيد"
-          />
-        </div>
-      </div>
-    );
-  }
 
   function copyToDescription(text: string): void {
     setFormData({ ...formData, description: text });

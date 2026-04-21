@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
 
     const combined = [
       ...(inventoryRes.data ?? []).map(toCamel),
-      ...(financialRes.data ?? []).map((f) => ({
+      ...(financialRes.data ?? []).map((f: any) => ({
         ...toCamel(f),
         isFinancial: true,
         type: 'expense',

@@ -1,13 +1,39 @@
 import { createClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/auth-helpers-nextjs';
 
-const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+let supabaseInstance: any = null;
 
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required in the environment');
-}
+export const supabase = new Proxy({} as any, {
+  get: (target, prop) => {
+    if (!supabaseInstance) {
+      const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+      
+      if (!url || !key) {
+        // Return a mock client for build time when env vars are not available
+        supabaseInstance = {
+          from: () => ({
+            select: () => ({ data: [], error: null }),
+            insert: () => ({ data: null, error: null }),
+            update: () => ({ data: null, error: null }),
+            delete: () => ({ data: null, error: null }),
+          }),
+          auth: {
+            getUser: () => ({ data: { user: null }, error: null }),
+          },
+        };
+      } else {
+        supabaseInstance = createClient(url, key);
+      }
+    }
+    return (supabaseInstance as any)[prop];
+  },
+});
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabaseClient = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder'
+);
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);

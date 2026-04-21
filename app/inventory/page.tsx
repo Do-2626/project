@@ -12,12 +12,13 @@ import {
 import InventoryTable from "@/app/inventory/components/InventoryTable";
 import Modal from "@/components/Modal";
 import WeeklyLog from "@/app/inventory/components/WeeklyLog";
-import PasswordPrompt from "@/components/PasswordPrompt";
 import DataTable from "@/components/DataTable";
 import { Product } from "./types";
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 export default function InventoryPage() {
   const dateInputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     document.title = "المخزون - توتى بيروتى";
@@ -28,39 +29,25 @@ export default function InventoryPage() {
     document.head.appendChild(link);
   }, []);
 
-  const [products, setProducts] = useState<Product[]>([]);
   // const [transactions, setTransactions] = useState([]);
   const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
   const [modal, setModal] = useState({ open: false, type: "", data: null });
   const [dailyReport, setDailyReport] = useState<any>(null);
-  const [showProtected, setShowProtected] = useState(false);
-  const [userRole, setUserRole] = useState<string>("");
+  const [showProtected, setShowProtected] = useState(true);
+  const [userRole, setUserRole] = useState<string>("manager");
   const [isLoadingReport, setIsLoadingReport] = useState(true);
 
-  // Fetch initial data
-  useEffect(() => {
-    fetch("/api/inventory").then(res => res.json()).then(setProducts);
-  }, []);
+  // Fetch initial data with caching
+  const { data: products = [], isLoading: productsLoading } = useQuery({
+    queryKey: ['products'],
+    queryFn: () => fetch("/api/inventory").then(res => res.json()),
+  });
 
-  // Fetch report when date or products changes
-  useEffect(() => {
-    setIsLoadingReport(true);
-    fetch(`/api/inventory/daily-report?date=${selectedDate}`)
-      .then(async (res) => {
-        const data = await res.json();
-        if (!res.ok) {
-          console.error('Daily report error:', data);
-          setDailyReport({ report: [] });
-        } else {
-          setDailyReport(data);
-        }
-      })
-      .catch((error) => {
-        console.error('Failed to load daily report:', error);
-        setDailyReport({ report: [] });
-      })
-      .finally(() => setIsLoadingReport(false));
-  }, [selectedDate, products]);
+  // Fetch totals with caching
+  const { data: totals } = useQuery({
+    queryKey: ['inventoryTotals'],
+    queryFn: () => fetch("/api/inventory/totals").then(res => res.json()),
+  });
 
   const handleUpdateProduct = async (updatedProduct: Product) => {
     try {
@@ -72,7 +59,7 @@ export default function InventoryPage() {
 
       if (!response.ok) throw new Error("فشل في تحديث المنتج");
       const updatedData = await response.json();
-      setProducts(prev => prev.map(p => (p._id === updatedProduct._id ? updatedData : p)));
+      queryClient.invalidateQueries({ queryKey: ['products'] });
     } catch (error) {
       console.error("Error updating product:", error);
     }
@@ -208,30 +195,15 @@ export default function InventoryPage() {
                   <div className="bg-[#101922] p-6 rounded-2xl border border-[#3b4754] shadow-inner">
                     <span className="text-[#9cabba] text-[10px] font-black uppercase tracking-widest block mb-1">إجمالي قيمة المخزون</span>
                     <span className="text-green-500 font-black text-3xl flex items-baseline gap-2">
-                      {products.reduce((acc, p) => {
-                        const qty = dailyReport?.report?.find((r: any) => r.product._id === p._id)?.endQty || 0;
-                        return acc + qty * (p.purchasePrice || 0);
-                      }, 0).toLocaleString()}
+                      {(totals?.totalValue || 0).toLocaleString('en-US')}
                       <span className="text-sm opacity-60">د.ل</span>
                     </span>
                   </div>
                 )}
               </div>
 
-              {!showProtected ? (
-                <div className="max-w-md mx-auto py-4">
-                  <PasswordPrompt
-                    onSuccess={(role) => {
-                      setShowProtected(true);
-                      setUserRole(role || "manager");
-                    }}
-                    label="كلمة المرور"
-                    buttonText="فتح البيانات المطلوبة"
-                  />
-                </div>
-              ) : (
-                <div className="bg-[#101922]/50 rounded-2xl overflow-hidden border border-[#3b4754] shadow-2xl backdrop-blur-sm">
-                  <InventoryTable
+              <div className="bg-[#101922]/50 rounded-2xl overflow-hidden border border-[#3b4754] shadow-2xl backdrop-blur-sm">
+                <InventoryTable
                     products={products}
                     transactions={[]}
                     onAddProduct={() => setModal({ open: true, type: "addProduct", data: null })}
@@ -241,8 +213,7 @@ export default function InventoryPage() {
                     onUpdateProduct={handleUpdateProduct}
                   />
                 </div>
-              )}
-            </div>
+              </div>
           </div>
         </section>
       </main>
@@ -255,11 +226,9 @@ export default function InventoryPage() {
         onSelectType={(type: string) => setModal({ ...modal, type })}
         onSuccess={() => {
           setModal({ open: false, type: "", data: null });
-          fetch("/api/inventory").then(res => res.json()).then(setProducts);
-          // Refresh report manually
-          fetch(`/api/inventory/daily-report?date=${selectedDate}`)
-            .then(res => res.json())
-            .then(setDailyReport);
+          queryClient.invalidateQueries({ queryKey: ['products'] });
+          queryClient.invalidateQueries({ queryKey: ['dailyReport', selectedDate] });
+          queryClient.invalidateQueries({ queryKey: ['inventoryTotals'] });
         }}
         products={products}
         selectedDate={selectedDate}

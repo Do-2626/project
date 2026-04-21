@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { FaTrash, FaEdit, FaPlus, FaStore } from "react-icons/fa";
-import PasswordPrompt from "@/components/PasswordPrompt";
 
 interface Branch {
   _id: string;
@@ -14,17 +13,14 @@ interface Branch {
 
 export default function BranchesPage() {
   const [branches, setBranches] = useState<Branch[]>([]);
-  const [isAuthorized, setIsAuthorized] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
   const [formData, setFormData] = useState({ name: "", location: "", settlementType: "daily" });
 
   useEffect(() => {
-    if (isAuthorized) {
-      fetchBranches();
-    }
-  }, [isAuthorized]);
+    fetchBranches();
+  }, []);
 
   const fetchBranches = async () => {
     setLoading(true);
@@ -95,23 +91,6 @@ export default function BranchesPage() {
     }
     setShowModal(true);
   };
-
-  if (!isAuthorized) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-blue-900 p-6">
-        <div className="max-w-4xl mx-auto bg-gray-800 p-8 rounded-xl shadow-lg mt-20">
-          <h1 className="text-3xl font-bold text-center text-white mb-8">
-            إدارة الفروع
-          </h1>
-          <PasswordPrompt
-            onSuccess={() => setIsAuthorized(true)}
-            label="أدخل كلمة المرور للوصول"
-            buttonText="تأكيد"
-          />
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-blue-900 p-6">

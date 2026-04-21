@@ -341,12 +341,12 @@ export default function BranchExpectedSales() {
                                     />
                                 ) : (
                                     <span className="text-yellow-500 font-bold">
-                                        {(r.actualSalesAmount || 0).toLocaleString()} <span className="text-[10px] opacity-70"> </span>
+                                        {(r.actualSalesAmount || 0).toLocaleString('en-US')} <span className="text-[10px] opacity-70"> </span>
                                     </span>
                                 ),
                                 footer: (data) => (
                                     <span className="text-yellow-500">
-                                        {data.reduce((acc: number, r: any) => acc + (r.actualSalesAmount || 0), 0).toLocaleString()} <span className="text-[10px]"> </span>
+                                        {data.reduce((acc: number, r: any) => acc + (r.actualSalesAmount || 0), 0).toLocaleString('en-US')} <span className="text-[10px]"> </span>
                                     </span>
                                 )
                             },
@@ -357,12 +357,12 @@ export default function BranchExpectedSales() {
                                         className: "p-4 text-center",
                                         render: (r: any) => (
                                             <span className="text-green-500 font-semibold">
-                                                {(r.expectedSales * (r.product.purchasePrice || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                {(r.expectedSales * (r.product.purchasePrice || 0)).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                             </span>
                                         ),
                                         footer: (data: any) => (
                                             <span className="text-green-500">
-                                                {data.reduce((acc: number, r: any) => acc + (r.expectedSales * (r.product.purchasePrice || 0)), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                {data.reduce((acc: number, r: any) => acc + (r.expectedSales * (r.product.purchasePrice || 0)), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                             </span>
                                         )
                                     },
@@ -380,14 +380,14 @@ export default function BranchExpectedSales() {
                         <div className="bg-[#1b2127]/80 p-6 rounded-2xl border border-[#3b4754] shadow-xl">
                             <span className="text-[#9cabba] text-[10px] font-black uppercase tracking-widest block mb-1">إجمالي المبيعات الفعلية</span>
                             <span className="text-yellow-500 font-black text-2xl">
-                                {branchReport.report.reduce((acc: number, r: any) => acc + (r.actualSalesAmount || 0), 0).toLocaleString()}
+                                {branchReport.report.reduce((acc: number, r: any) => acc + (r.actualSalesAmount || 0), 0).toLocaleString('en-US')}
                                 <span className="text-sm opacity-60 mr-1">د.ل</span>
                             </span>
                         </div>
                         <div className="bg-[#1b2127]/80 p-6 rounded-2xl border border-[#3b4754] shadow-xl">
                             <span className="text-[#9cabba] text-[10px] font-black uppercase tracking-widest block mb-1">إجمالي المصروفات</span>
                             <span className="text-orange-500 font-black text-2xl">
-                                {branchReport.during.filter((t: any) => t.isFinancial && t.type === 'expense').reduce((acc: number, t: any) => acc + (t.amount || 0), 0).toLocaleString()}
+                                {branchReport.during.filter((t: any) => t.isFinancial && t.type === 'expense').reduce((acc: number, t: any) => acc + (t.amount || 0), 0).toLocaleString('en-US')}
                                 <span className="text-sm opacity-60 mr-1">د.ل</span>
                             </span>
                         </div>
@@ -398,7 +398,7 @@ export default function BranchExpectedSales() {
                                 {(
                                     branchReport.report.reduce((acc: number, r: any) => acc + (r.actualSalesAmount || 0), 0) -
                                     branchReport.during.filter((t: any) => t.isFinancial && t.type === 'expense').reduce((acc: number, t: any) => acc + (t.amount || 0), 0)
-                                ).toLocaleString()}
+                                ).toLocaleString('en-US')}
                                 <span className="text-sm opacity-60 mr-1">د.ل</span>
                             </span>
                         </div>
@@ -406,7 +406,7 @@ export default function BranchExpectedSales() {
                             <div className="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
                             <span className="text-green-500 text-[10px] font-black uppercase tracking-widest block mb-1">المبالغ المسلمة (المحصلة)</span>
                             <span className="text-white font-black text-2xl">
-                                {branchReport.during.filter((t: any) => t.isFinancial && t.type === 'income' && t.category === "تحصيل من عهدة الفرع").reduce((acc: number, t: any) => acc + (t.amount || 0), 0).toLocaleString()}
+                                {branchReport.during.filter((t: any) => t.isFinancial && t.type === 'income' && t.category === "تحصيل من عهدة الفرع").reduce((acc: number, t: any) => acc + (t.amount || 0), 0).toLocaleString('en-US')}
                                 <span className="text-sm opacity-60 mr-1">د.ل</span>
                             </span>
                         </div>
@@ -448,7 +448,7 @@ export default function BranchExpectedSales() {
                                             branchReport.report.reduce((acc: number, r: any) => acc + (r.actualSalesAmount || 0), 0) -
                                             branchReport.during.filter((t: any) => t.isFinancial && t.type === 'expense').reduce((acc: number, t: any) => acc + (t.amount || 0), 0) -
                                             branchReport.during.filter((t: any) => t.isFinancial && t.type === 'income' && t.category === "تحصيل من عهدة الفرع").reduce((acc: number, t: any) => acc + (t.amount || 0), 0)
-                                        ).toLocaleString()}
+                                        ).toLocaleString('en-US')}
                                     </span>
                                     <span className="text-sm opacity-60">د.ل</span>
                                 </div>

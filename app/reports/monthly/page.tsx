@@ -78,7 +78,7 @@ export default function MonthlyReportsPage() {
                         <div>
                             <p className="text-[#9cabba] text-xs font-bold uppercase tracking-wider">إجمالي المبيعات التاريخية</p>
                             <h2 className="text-2xl font-black mt-1">
-                                {data.reduce((acc, curr) => acc + curr.sales, 0).toLocaleString()}
+                                {data.reduce((acc, curr) => acc + curr.sales, 0).toLocaleString('en-US')}
                                 <span className="text-xs opacity-50 mr-2">د.ل</span>
                             </h2>
                         </div>
@@ -91,7 +91,7 @@ export default function MonthlyReportsPage() {
                         <div>
                             <p className="text-[#9cabba] text-xs font-bold uppercase tracking-wider">متوسط الربح الشهري</p>
                             <h2 className="text-2xl font-black mt-1">
-                                {(data.reduce((acc, curr) => acc + curr.netProfit, 0) / (data.length || 1)).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                {(data.reduce((acc, curr) => acc + curr.netProfit, 0) / (data.length || 1)).toLocaleString('en-US', { maximumFractionDigits: 0 })}
                                 <span className="text-xs opacity-50 mr-2">د.ل</span>
                             </h2>
                         </div>
@@ -104,7 +104,7 @@ export default function MonthlyReportsPage() {
                         <div>
                             <p className="text-[#9cabba] text-xs font-bold uppercase tracking-wider">أفضل شهر مبيعات</p>
                             <h2 className="text-2xl font-black mt-1">
-                                {data.length > 0 ? (Math.max(...data.map(d => d.sales))).toLocaleString() : 0}
+                                {data.length > 0 ? (Math.max(...data.map(d => d.sales))).toLocaleString('en-US') : 0}
                                 <span className="text-xs opacity-50 mr-2">د.ل</span>
                             </h2>
                         </div>
@@ -140,29 +140,29 @@ export default function MonthlyReportsPage() {
                                 {
                                     header: "المبيعات",
                                     className: "p-5 text-center",
-                                    render: (row) => row.sales.toLocaleString()
+                                    render: (row) => row.sales.toLocaleString('en-US')
                                 },
                                 {
                                     header: "تكلفة البضاعة",
                                     className: "p-5 text-center text-gray-500",
-                                    render: (row) => row.cogs.toLocaleString()
+                                    render: (row) => row.cogs.toLocaleString('en-US')
                                 },
                                 {
                                     header: "المصاريف",
                                     className: "p-5 text-center text-orange-400",
-                                    render: (row) => row.expenses.toLocaleString()
+                                    render: (row) => row.expenses.toLocaleString('en-US')
                                 },
                                 {
                                     header: "إيرادات أخرى",
                                     className: "p-5 text-center text-cyan-400",
-                                    render: (row) => row.otherIncome.toLocaleString()
+                                    render: (row) => row.otherIncome.toLocaleString('en-US')
                                 },
                                 {
                                     header: "صافي الربح",
                                     className: "p-5 text-center font-black",
                                     render: (row) => (
                                         <span className={row.netProfit >= 0 ? "text-green-500" : "text-red-500"}>
-                                            {row.netProfit.toLocaleString()}
+                                            {row.netProfit.toLocaleString('en-US')}
                                         </span>
                                     )
                                 },
