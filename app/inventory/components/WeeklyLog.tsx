@@ -347,7 +347,7 @@ export default function WeeklyLog({ iconMap }: WeeklyLogProps) {
           <div className="bg-[#1b2127] border border-[#3b4754] p-8 rounded-[2.5rem] w-full max-w-md shadow-2xl scale-100 transition-all">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-2xl font-black text-white">تصفية السجل</h3>
-              <button onClick={() => setIsFilterModalOpen(false)} className="size-10 flex items-center justify-center bg-white/5 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors">✕</button>
+              <button onClick={() => setIsFilterModalOpen(false)} className="size-10 px-4 py-2 flex items-center justify-center bg-white/5 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors">✕</button>
             </div>
 
             <div className="space-y-6">

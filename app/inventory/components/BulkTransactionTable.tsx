@@ -9,6 +9,8 @@ interface Product {
 
 interface DailyReportItem {
   product: Product;
+  closingBalance: number; // المخزون الحالي (رصيد النهاية في التقرير)
+  _id: string;
   endQty: number; // المخزون الحالي (رصيد النهاية في التقرير)
 }
 
@@ -54,22 +56,21 @@ export default function BulkTransactionTable({
           </tr>
         </thead>
         <tbody>
-          {products.map((product, index) => {
-            // استخدام index كمفتاح فريد لأن IDs قد تكون متطابقة
-            const uniqueKey = String(index);
+          {products.map((product) => {
+            // البحث عن المخزون الحالي للمنتج من التقرير اليومي
             const reportItem = dailyReport?.find(
-              (item) => String(item.product._id) === String(product._id)
+              (item) => item._id === product._id
             );
-            const currentStock = reportItem ? reportItem.endQty : 0;
-            const quantity = quantities[uniqueKey] || 0;
-            const amount = amounts[uniqueKey] || 0;
+            const currentStock = reportItem ? reportItem.closingBalance : 0;
+            const quantity = quantities[product._id] || 0;
+            const amount = amounts[product._id] || 0;
             const expected = calculateExpected(currentStock, quantity);
             const isModified = quantity > 0;
             const isNegative = expected < 0;
 
             return (
               <tr
-                key={`product-${index}`}
+                key={product._id}
                 className={`border-b border-gray-700 hover:bg-gray-700 transition-colors ${isModified ? "bg-gray-800 bg-opacity-60" : "bg-gray-800"
                   }`}
               >
@@ -84,7 +85,7 @@ export default function BulkTransactionTable({
                     value={quantity === 0 ? "" : quantity}
                     onChange={(e) =>
                       onQuantityChange(
-                        uniqueKey,
+                        product._id,
                         parseInt(e.target.value) || 0
                       )
                     }
@@ -102,7 +103,7 @@ export default function BulkTransactionTable({
                       value={amount === 0 ? "" : amount}
                       onChange={(e) =>
                         onAmountChange(
-                          uniqueKey,
+                          product._id,
                           parseFloat(e.target.value) || 0
                         )
                       }

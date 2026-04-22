@@ -1,3 +1,14 @@
+DROP TABLE IF EXISTS financial_transactions CASCADE;
+DROP TABLE IF EXISTS transactions CASCADE;
+DROP TABLE IF EXISTS products CASCADE;
+DROP TABLE IF EXISTS branches CASCADE;
+DROP TABLE IF EXISTS expense_categories CASCADE;
+DROP TABLE IF EXISTS contacts CASCADE;
+DROP VIEW IF EXISTS daily_inventory_summary CASCADE;
+
+
+
+
 -- 1. تفعيل إضافات UUID لإنشاء معرفات فريدة تلقائياً
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
@@ -100,3 +111,51 @@ SELECT
     SUM(CASE WHEN type = 'outgoing' OR type = 'damaged' OR type = 'sale' THEN quantity ELSE 0 END) as total_out
 FROM transactions
 GROUP BY date, product_id;
+
+
+-- 1. إضافة جدول الأرصدة الافتتاحية (Snapshots)
+-- هذا الجدول سيسمح لنا ببدء الحساب من تاريخ معين بدلاً من جرد كل شيء من البداية
+CREATE TABLE IF NOT EXISTS inventory_snapshots (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    snapshot_date DATE NOT NULL,
+    product_id UUID REFERENCES products(id) ON DELETE CASCADE,
+    branch_id UUID REFERENCES branches(id) ON DELETE CASCADE,
+    quantity_on_hand DECIMAL(12, 2) DEFAULT 0,
+    UNIQUE(snapshot_date, product_id, branch_id)
+);
+
+-- 2. إنشاء وظيفة الحساب المجمع (SQL Aggregation)
+-- هذه الوظيفة ستنفذ الـ SUM و GROUP BY داخل قاعدة البيانات مباشرة
+CREATE OR REPLACE FUNCTION get_inventory_summary_v2(
+    p_start_date DATE, 
+    p_end_date DATE, 
+    p_branch_id UUID DEFAULT NULL
+)
+RETURNS TABLE (
+    product_id UUID,
+    qty_purchase DECIMAL,
+    qty_sale DECIMAL,
+    qty_incoming DECIMAL,
+    qty_outgoing DECIMAL,
+    qty_damaged DECIMAL,
+    net_change DECIMAL
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        t.product_id,
+        SUM(CASE WHEN t.type = 'purchase' THEN t.quantity ELSE 0 END) as qty_purchase,
+        SUM(CASE WHEN t.type = 'sale' THEN t.quantity ELSE 0 END) as qty_sale,
+        SUM(CASE WHEN t.type = 'incoming' THEN t.quantity ELSE 0 END) as qty_incoming,
+        SUM(CASE WHEN t.type = 'outgoing' THEN t.quantity ELSE 0 END) as qty_outgoing,
+        SUM(CASE WHEN t.type = 'damaged' THEN t.quantity ELSE 0 END) as qty_damaged,
+        SUM(CASE 
+            WHEN t.type IN ('purchase', 'incoming') THEN t.quantity 
+            WHEN t.type IN ('sale', 'outgoing', 'damaged') THEN -t.quantity 
+            ELSE 0 END) as net_change
+    FROM transactions t
+    WHERE t.date BETWEEN p_start_date AND p_end_date
+      AND (p_branch_id IS NULL OR t.branch_id = p_branch_id)
+    GROUP BY t.product_id;
+END;
+$$ LANGUAGE plpgsql;

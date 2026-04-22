@@ -45,7 +45,7 @@ export default function InventoryPage() {
   // Fetch report when date or products changes
   useEffect(() => {
     setIsLoadingReport(true);
-    fetch(`/api/inventory/daily-report?date=${selectedDate}`)
+    fetch(`/api/inventory/optimized-report?date=${selectedDate}`)
       .then(async (res) => {
         const data = await res.json();
         if (!res.ok) {
@@ -142,6 +142,12 @@ export default function InventoryPage() {
           </div>
 
           <div className="bg-[#1c2127] border border-[#3b4754] rounded-2xl overflow-hidden shadow-2xl">
+
+            <div
+              onClick={() => { console.log("Daily Report:", dailyReport) }}
+              className="medo">
+              medo
+            </div>
             <DataTable
               data={dailyReport?.report || []}
               isLoading={isLoadingReport}
@@ -150,7 +156,7 @@ export default function InventoryPage() {
                 {
                   header: "الصنف",
                   className: "text-right",
-                  render: (r: any) => <span className="text-center text-sm md:text-base font-bold text-gray-200">{r.product.name}</span>
+                  render: (r: any) => <span className="text-center text-sm md:text-base font-bold text-gray-200">{r.name}</span>
                 },
                 {
                   header: "بداية اليوم",
@@ -162,7 +168,7 @@ export default function InventoryPage() {
                   className: "text-center w-32",
                   render: (r: any) => (
                     <div className="bg-[#101922] py-1 px-4 rounded-xl border border-[#3b4754]/50 inline-block min-w-[60px] font-black text-[#1173d4] text-lg shadow-inner">
-                      {r.endQty}
+                      {r.closingBalance}
                     </div>
                   )
                 }
@@ -257,7 +263,7 @@ export default function InventoryPage() {
           setModal({ open: false, type: "", data: null });
           fetch("/api/inventory").then(res => res.json()).then(setProducts);
           // Refresh report manually
-          fetch(`/api/inventory/daily-report?date=${selectedDate}`)
+          fetch(`/api/inventory/optimized-report?date=${selectedDate}`)
             .then(res => res.json())
             .then(setDailyReport);
         }}
