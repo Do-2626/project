@@ -24,7 +24,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json((data ?? []).map(toCamel));
+  return NextResponse.json((data ?? []).map(item => ({
+    ...toCamel(item),
+    _id: item.id
+  })));
 }
 
 export async function POST(req: NextRequest) {
@@ -83,6 +86,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ message: financialError.message }, { status: 500 });
       }
 
+      if (!financialTransaction) {
+        return NextResponse.json({ message: 'فشل إنشاء المعاملة المالية' }, { status: 500 });
+      }
+
       const inventoryPayload = {
         product_id: body.productId,
         quantity: body.quantity,
@@ -100,7 +107,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ message: inventoryError.message }, { status: 500 });
       }
 
-      return NextResponse.json(toCamel(financialTransaction), { status: 201 });
+      return NextResponse.json({
+        ...toCamel(financialTransaction),
+        _id: financialTransaction.id
+      }, { status: 201 });
     }
 
     const payload = pickSnake(body, [
@@ -130,7 +140,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(toCamel(transaction), { status: 201 });
+    if (!transaction) {
+      return NextResponse.json({ message: 'فشل إنشاء المعاملة المالية' }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      ...toCamel(transaction),
+      _id: transaction.id
+    }, { status: 201 });
   } catch (error) {
     console.error('خطأ في إنشاء المعاملة المالية:', error);
     let errorMessage = 'حدث خطأ أثناء معالجة الطلب';

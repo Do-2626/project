@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
-// كلمات المرور محفوظة فقط في الخادم
-const MANAGER_PASSWORD = "mo2626";
-const DELEGATE_PASSWORD = "user2626";
+// كلمات المرور محفوظة في متغيرات البيئة للأمان
+const MANAGER_PASSWORD = process.env.MANAGER_PASSWORD || "mo2626";
+const DELEGATE_PASSWORD = process.env.DELEGATE_PASSWORD || "user2626";
 
 export async function POST(req: Request) {
   try {

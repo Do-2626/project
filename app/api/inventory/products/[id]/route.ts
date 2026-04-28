@@ -9,7 +9,13 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     }
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
-  return NextResponse.json(toCamel(data));
+  if (!data) {
+    return NextResponse.json({ error: 'المنتج غير موجود' }, { status: 404 });
+  }
+  return NextResponse.json({
+    ...toCamel(data),
+    _id: data.id
+  });
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
@@ -35,7 +41,14 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  return NextResponse.json(toCamel(data));
+  if (!data) {
+    return NextResponse.json({ error: 'المنتج غير موجود' }, { status: 404 });
+  }
+
+  return NextResponse.json({
+    ...toCamel(data),
+    _id: data.id
+  });
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {

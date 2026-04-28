@@ -32,6 +32,7 @@ export default function InventoryTable({
   userRole,
   dailyReport,
   onUpdateProduct,
+  onAddProduct,
 }: InventoryTableProps) {
   const getCurrentQuantity = (productId: string) => {
     if (!dailyReport) return 0;
@@ -124,6 +125,17 @@ export default function InventoryTable({
           </div>
         </div>
       )}
+
+      {/* زر إضافة منتج جديد */}
+      <div className="flex justify-end mb-4">
+        <button
+          onClick={onAddProduct}
+          className="bg-[#1173d4] hover:bg-[#1100f4] text-white px-6 py-3 rounded-xl font-bold text-sm shadow-xl shadow-[#1173d4]/10 transition-all active:scale-95 flex items-center gap-2"
+        >
+          <span className="material-symbols-outlined text-lg">add</span>
+          إضافة صنف جديد
+        </button>
+      </div>
 
       {/* جدول المنتجات */}
       <DataTable

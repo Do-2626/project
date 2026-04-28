@@ -25,7 +25,14 @@ export async function PUT(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(toCamel(data));
+  if (!data) {
+    return NextResponse.json({ error: 'لم يتم العثور على الفرع' }, { status: 404 });
+  }
+
+  return NextResponse.json({
+    ...toCamel(data),
+    _id: data.id
+  });
 }
 
 export async function DELETE(
@@ -48,5 +55,15 @@ export async function DELETE(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ message: 'Branch deleted successfully', branch: toCamel(data) });
+  if (!data) {
+    return NextResponse.json({ error: 'لم يتم العثور على الفرع' }, { status: 404 });
+  }
+
+  return NextResponse.json({
+    message: 'Branch deleted successfully',
+    branch: {
+      ...toCamel(data),
+      _id: data.id
+    }
+  });
 }

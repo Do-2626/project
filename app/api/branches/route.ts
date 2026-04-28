@@ -12,7 +12,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json((data ?? []).map(toCamel));
+  return NextResponse.json((data ?? []).map(item => ({
+    ...toCamel(item),
+    _id: item.id
+  })));
 }
 
 export async function POST(req: NextRequest) {
@@ -47,5 +50,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(toCamel(data), { status: 201 });
+  if (!data) {
+    return NextResponse.json({ error: 'فشل إنشاء الفرع' }, { status: 500 });
+  }
+
+  return NextResponse.json({
+    ...toCamel(data),
+    _id: data.id
+  }, { status: 201 });
 }

@@ -20,7 +20,14 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(toCamel(data));
+  if (!data) {
+    return NextResponse.json({ success: false, error: 'لم يتم العثور على جهة الاتصال' }, { status: 404 });
+  }
+
+  return NextResponse.json({
+    ...toCamel(data),
+    _id: data.id
+  });
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {

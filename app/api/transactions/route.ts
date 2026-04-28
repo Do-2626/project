@@ -1,80 +1,87 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase, pickSnake, toCamel } from '@/lib/supabase';
+import { supabase, toCamel, pickSnake } from '@/lib/supabase';
 
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const date = searchParams.get('date');
-  const startDate = searchParams.get('startDate');
-  const endDate = searchParams.get('endDate');
+// GET: جلب المعاملات
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+    const type = searchParams.get('type');
+    const party = searchParams.get('party');
 
-  let query = supabase
-    .from('transactions')
-    .select('*, product_id(*), branch_id(*)')
-    .order('date', { ascending: true });
+    let query = supabase
+      .from('transactions')
+      .select('*')
+      .order('date', { ascending: false });
 
-  if (date) {
-    query = query.eq('date', date);
-  } else if (startDate && endDate) {
-    query = query.gte('date', startDate).lte('date', endDate);
+    // تطبيق الفلاتر
+    if (startDate) query = query.gte('date', startDate);
+    if (endDate) query = query.lte('date', endDate);
+    if (type) query = query.eq('type', type);
+    if (party) query = query.eq('party', party);
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    // تحويل البيانات وإضافة _id
+    const processedData = (data ?? []).map((item: any) => ({
+      ...toCamel(item),
+      _id: item.id
+    }));
+
+    return NextResponse.json(processedData);
+
+  } catch (error: any) {
+    console.error('Error in GET /api/transactions:', error);
+    return NextResponse.json(
+      { error: error.message || 'فشل في جلب المعاملات' },
+      { status: 500 }
+    );
   }
-
-  const { data, error } = await query;
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json((data ?? []).map(toCamel));
 }
 
+// POST: إنشاء معاملة جديدة (باستخدام الكود الذي قدمته)
 export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const items = Array.isArray(body) ? body : [body];
-  const results: any[] = [];
+  try {
+    const body = await req.json();
+    const items = Array.isArray(body) ? body : [body];
+    const results: any[] = [];
 
-  for (const item of items) {
-    const payload = pickSnake(item, [
-      'productId',
-      'quantity',
-      'type',
-      'party',
-      'date',
-      'amount',
-      'category',
-      'branchId',
-      'isRecurring',
-    ]);
+    for (const item of items) {
+      const payload = pickSnake(item, [
+        'productId', 'quantity', 'type', 'party', 'date', 
+        'amount', 'category', 'branchId', 'isRecurring'
+      ]);
 
-    const { data: insertedTransaction, error: transactionError } = await supabase
-      .from('transactions')
-      .insert(payload)
-      .select()
-      .single();
+      // إضافة أمر الحفظ المفقود في المصدر
+      const { data, error } = await supabase
+        .from('transactions')
+        .insert(payload)
+        .select()
+        .single();
 
-    if (transactionError) {
-      return NextResponse.json({ error: transactionError.message }, { status: 500 });
+      if (error) throw error;
+      
+      // تحويل البيانات وإضافة _id
+      results.push({
+        ...toCamel(data),
+        _id: data.id
+      });
     }
 
-    if (item.type === 'purchase' || item.type === 'sale') {
-      const financialPayload = {
-        type: item.type === 'purchase' ? 'purchase' : 'income',
-        amount: item.amount,
-        category: item.type === 'purchase' ? 'المشتريات' : 'المبيعات',
-        date: item.date,
-        party: item.party,
-        branch_id: item.branchId,
-        product_id: item.productId,
-        quantity: item.quantity,
-        transaction_id: insertedTransaction.id,
-      };
-
-      const { error: financeError } = await supabase.from('financial_transactions').insert(financialPayload);
-      if (financeError) {
-        return NextResponse.json({ error: financeError.message }, { status: 500 });
-      }
-    }
-
-    results.push(toCamel(insertedTransaction));
+    // إرجاع نفس الشكل الذي استقبلته (مفرد أو مصفوفة)
+    return NextResponse.json(
+      Array.isArray(body) ? results : results[0], 
+      { status: 201 }
+    );
+    
+  } catch (error: any) {
+    console.error('Error in POST /api/transactions:', error);
+    return NextResponse.json(
+      { error: error.message || 'فشل في إنشاء المعاملة' },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json(Array.isArray(body) ? results : results[0], { status: 201 });
 }

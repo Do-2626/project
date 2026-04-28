@@ -11,7 +11,10 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json((data ?? []).map(toCamel));
+  return NextResponse.json((data ?? []).map(item => ({
+    ...toCamel(item),
+    _id: item.id
+  })));
 }
 
 export async function POST(req: NextRequest) {
@@ -30,5 +33,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json((data ?? []).map(toCamel), { status: 201 });
+  if (!data || data.length === 0) {
+    return NextResponse.json({ error: 'فشل إضافة المنتجات' }, { status: 500 });
+  }
+
+  return NextResponse.json((data ?? []).map(item => ({
+    ...toCamel(item),
+    _id: item.id
+  })), { status: 201 });
 }

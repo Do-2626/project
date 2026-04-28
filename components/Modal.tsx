@@ -1,3 +1,5 @@
+// components/Modal.tsx
+
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   FaArrowUp, FaArrowDown, FaCartPlus, FaWallet, FaBan, FaRightLeft, FaXmark
@@ -81,6 +83,7 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
       setBranches(branchesRes);
       setExpenseCategories(categoriesRes);
       setContacts(contactsRes);
+      console.log("contacts fetched:", contactsRes);
     } catch (err) {
       console.error("Failed to fetch data", err);
     }
@@ -232,18 +235,29 @@ export default function Modal({ open, type, onClose, onSuccess, products, select
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
-    
+
     setIsSubmitting(true);
     try {
+      let submitResult: boolean | void = true;
+
       if (type === "addProduct") await handleAddProduct();
       else if (type === "dailyExpense") await handleDailyExpense();
-      else if (type === "transfer") await handleTransfer();
-      else if (type !== "delete") await handleStandardTransaction();
-      
-      onSuccess();
-    } catch (error) {
+      else if (type === "transfer") submitResult = await handleTransfer();
+      else if (type !== "delete") submitResult = await handleStandardTransaction();
+
+      if (submitResult === false) {
+        return;
+      }
+
+      if (typeof onSuccess === "function") {
+        await onSuccess();
+      }
+
+      onClose?.();
+      resetState();
+    } catch (error: any) {
       console.error("Submission error:", error);
-      alert("حدث خطأ أثناء حفظ البيانات");
+      alert("حدث خطأ أثناء حفظ البيانات: " + (error?.message || error));
     } finally {
       setIsSubmitting(false);
     }

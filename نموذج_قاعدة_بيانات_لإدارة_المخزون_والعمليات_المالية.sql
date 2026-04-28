@@ -159,3 +159,13 @@ BEGIN
     GROUP BY t.product_id;
 END;
 $$ LANGUAGE plpgsql;
+
+
+
+
+
+ALTER TABLE products DISABLE ROW LEVEL SECURITY;
+-- إضافة فهارس لتحسين أداء الترتيب في صفحة الإدارة المركزية
+CREATE INDEX IF NOT EXISTS idx_products_name ON products(name);
+CREATE INDEX IF NOT EXISTS idx_branches_name ON branches(name);
+CREATE INDEX IF NOT EXISTS idx_contacts_name ON contacts(name);

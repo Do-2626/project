@@ -1,0 +1,96 @@
+/* app/v3/inventory.css */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Public+Sans:wght@400;600;700&display=swap');
+
+:root {
+  --v3-primary-blue: #1e3a8a;
+  --v3-emerald: #10b981;
+  --v3-amber: #f59e0b;
+  --v3-bg-light: #f8fafc;
+  --v3-card-border: #e2e8f0;
+  --v3-text-main: #1e293b;
+  --v3-text-muted: #64748b;
+}
+
+.v3-inventory-container {
+  font-family: 'Cairo', sans-serif;
+  color: var(--v3-text-main);
+  background-color: var(--v3-bg-light);
+  min-height: 100vh;
+  direction: rtl;
+}
+
+.v3-number {
+  font-family: 'Public Sans', sans-serif;
+}
+
+.v3-card {
+  background: white;
+  border: 1px solid var(--v3-card-border);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  transition: all 0.2s ease;
+}
+
+.v3-card:hover {
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+}
+
+.v3-btn-primary {
+  background-color: var(--v3-primary-blue);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: opacity 0.2s;
+}
+
+.v3-btn-primary:hover {
+  opacity: 0.9;
+}
+
+.v3-badge {
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.v3-badge-emerald {
+  background-color: #ecfdf5;
+  color: #065f46;
+}
+
+.v3-badge-amber {
+  background-color: #fffbeb;
+  color: #92400e;
+}
+
+.v3-table-header {
+  background-color: #f1f5f9;
+  font-weight: 700;
+  color: var(--v3-text-muted);
+}
+
+.v3-sku-row {
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.v3-sku-row:hover {
+  background-color: #f8fafc;
+}
+
+.v3-input {
+  border: 1px solid var(--v3-card-border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  width: 100%;
+}
+
+.v3-input:focus {
+  outline: none;
+  border-color: var(--v3-primary-blue);
+  ring: 2px solid rgba(30, 58, 138, 0.1);
+}

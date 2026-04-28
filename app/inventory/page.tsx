@@ -142,12 +142,6 @@ export default function InventoryPage() {
           </div>
 
           <div className="bg-[#1c2127] border border-[#3b4754] rounded-2xl overflow-hidden shadow-2xl">
-
-            <div
-              onClick={() => { console.log("Daily Report:", dailyReport) }}
-              className="medo">
-              medo
-            </div>
             <DataTable
               data={dailyReport?.report || []}
               isLoading={isLoadingReport}

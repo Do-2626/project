@@ -12,10 +12,19 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await query;
   if (error) {
+    console.error("❌ Database error:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json((data ?? []).map(toCamel));
+  console.log(`📊 Contacts fetched: ${data?.length || 0} records (type: ${type || 'all'})`);
+
+  // تحويل البيانات وإضافة _id للتوافق مع واجهة المستخدم
+  const processedData = (data ?? []).map(item => ({
+    ...toCamel(item),
+    _id: item.id // ضمان وجود _id للتوافق مع المكون Modal
+  }));
+
+  return NextResponse.json(processedData);
 }
 
 export async function POST(req: NextRequest) {
@@ -27,5 +36,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(toCamel(data));
+  if (!data) {
+    return NextResponse.json({ success: false, error: 'فشل إنشاء جهة الاتصال' }, { status: 500 });
+  }
+
+  return NextResponse.json({
+    ...toCamel(data),
+    _id: data.id
+  });
 }

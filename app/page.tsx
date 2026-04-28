@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Package, Receipt, BarChart3, TrendingUp, GitBranch } from "lucide-react";
+import { Package, Receipt, BarChart3, TrendingUp, GitBranch, Database } from "lucide-react";
 import { FaTruckLoading } from "react-icons/fa";
 import Link from "next/link";
 // import { TodoItem } from "@/components/ui/todo-item";
@@ -23,6 +23,12 @@ export default function Home() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+          <Link href="/master-data" className="bg-gradient-to-br from-red-600 to-red-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col items-center justify-center text-center group">
+            <Database className="h-12 w-12 text-white mb-4 group-hover:scale-110 transition-transform" />
+            <h2 className="text-xl font-bold text-white">إدارة البيانات المركزية</h2>
+            <p className="text-red-100 mt-2">إدارة الفروع والمنتجات والموردين والفئات</p>
+          </Link>
+
           <Link href="/inventory" className="bg-gradient-to-br from-blue-600 to-blue-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col items-center justify-center text-center group">
             <Package className="h-12 w-12 text-white mb-4 group-hover:scale-110 transition-transform" />
             <h2 className="text-xl font-bold text-white">المخزون</h2>
