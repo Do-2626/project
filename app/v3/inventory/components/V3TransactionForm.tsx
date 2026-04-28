@@ -51,6 +51,7 @@ export const V3TransactionForm: React.FC<V3TransactionFormProps> = ({
         quantity: Number(formData.quantity),
         amount: Number(formData.amount) || undefined,
         branch_id: (type === 'outgoing' || type === 'incoming') ? formData.branch_id : undefined,
+        is_recurring: false,
       });
       onSuccess();
     } catch (err: any) {

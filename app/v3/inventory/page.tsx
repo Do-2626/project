@@ -252,7 +252,7 @@ export default function InventoryV3Page() {
                       <tr key={item.productId} className="v3-sku-row">
                         <td className="px-4 py-3 font-semibold">
                           <div>{product?.name || "منتج غير معروف"}</div>
-                          <div className="text-[10px] text-gray-400 v3-number">{product?.id.substring(0, 8)}</div>
+                          <div className="text-[10px] text-gray-400 v3-number">{product?.id?.substring(0, 8) || "--------"}</div>
                         </td>
                         <td className="px-4 py-3 v3-number text-emerald-600">+{mounted ? formatNumber(Number(item.qtyPurchase) + Number(item.qtyIncoming)) : "0"}</td>
                         <td className="px-4 py-3 v3-number text-red-600">-{mounted ? formatNumber(Number(item.qtySale) + Number(item.qtyOutgoing) + Number(item.qtyDamaged)) : "0"}</td>
